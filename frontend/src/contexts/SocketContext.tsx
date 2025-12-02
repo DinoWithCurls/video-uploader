@@ -1,0 +1,78 @@
+import React, { createContext, useEffect, useState, useCallback } from "react";
+import { io, Socket } from "socket.io-client";
+import { useAuth } from "../hooks/useAuth";
+
+interface SocketContextType {
+  socket: Socket | null;
+  connected: boolean;
+  subscribe: (event: string, handler: (...args: any[]) => void) => () => void;
+}
+
+export const SocketContext = createContext<SocketContextType | null>(null);
+
+export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  const [socket, setSocket] = useState<Socket | null>(null);
+  const [connected, setConnected] = useState(false);
+  const { token } = useAuth();
+
+  useEffect(() => {
+    if (!token) {
+      // Disconnect if no token
+      if (socket) {
+        socket.disconnect();
+        setSocket(null);
+        setConnected(false);
+      }
+      return;
+    }
+
+    // Create socket connection
+    const newSocket = io("http://localhost:5000", {
+      auth: { token },
+      autoConnect: true,
+    });
+
+    newSocket.on("connect", () => {
+      console.log("Socket.io connected");
+      setConnected(true);
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("Socket.io disconnected");
+      setConnected(false);
+    });
+
+    newSocket.on("connect_error", (error) => {
+      console.error("Socket.io connection error:", error);
+      setConnected(false);
+    });
+
+    setSocket(newSocket);
+
+    return () => {
+      newSocket.close();
+    };
+  }, [token]);
+
+  const subscribe = useCallback(
+    (event: string, handler: (...args: any[]) => void) => {
+      if (!socket) return () => {};
+
+      socket.on(event, handler);
+
+      // Return unsubscribe function
+      return () => {
+        socket.off(event, handler);
+      };
+    },
+    [socket]
+  );
+
+  return (
+    <SocketContext.Provider value={{ socket, connected, subscribe }}>
+      {children}
+    </SocketContext.Provider>
+  );
+};

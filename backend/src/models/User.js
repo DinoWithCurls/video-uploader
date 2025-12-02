@@ -32,6 +32,22 @@ const userSchema = new mongoose.Schema({
     enum: ["viewer", "editor", "admin"],
     default: "viewer",
   },
+  organizationId: {
+    type: String,
+    default: null,
+  },
+  organizationName: {
+    type: String,
+    default: null,
+  },
+  isActive: {
+    type: Boolean,
+    default: true,
+  },
+  lastLogin: {
+    type: Date,
+    default: null,
+  },
 });
 
 userSchema.pre("save", async function (next) {

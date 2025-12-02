@@ -1,2 +1,9 @@
 backend/node_modules
+frontend/node_modules
+.env
 backend/.env
+frontend/.env
+
+# Video uploads
+backend/uploads/videos/*
+!backend/uploads/videos/.gitkeep
