@@ -12,11 +12,11 @@ const Register = () => {
   const { register, error } = useAuth();
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const result = await register(formData);
@@ -71,7 +71,7 @@ const Register = () => {
             onChange={handleChange}
             className="w-full px-3 py-2 border rounded-lg"
             required
-            minLength="6"
+            minLength={6}
           />
         </div>
 
