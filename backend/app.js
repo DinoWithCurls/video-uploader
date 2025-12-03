@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import authRoutes from "./src/routes/auth.js";
 import videoRoutes from "./src/routes/video.js";
+import userRoutes from "./src/routes/user.js";
 import { auth } from "./src/middleware/auth.js";
 import { corsOptions } from "./src/config/cors.js";
 
@@ -15,6 +16,7 @@ app.use(express.json());
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/videos", videoRoutes);
+app.use("/api/users", userRoutes);
 
 app.get("/", (req, res) => {
   res.send("Hello from your NodeJS app");

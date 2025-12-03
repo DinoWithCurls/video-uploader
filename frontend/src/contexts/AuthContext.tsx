@@ -2,7 +2,8 @@ import { createContext, useState, useEffect, type ReactNode } from "react";
 import { authAPI } from "../services/api";
 import logger from "../utils/logger";
 
-type User = {
+export type User = {
+  _id?: string | number;
   id?: string | number;
   name?: string;
   email?: string;
