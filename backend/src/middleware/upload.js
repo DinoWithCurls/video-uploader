@@ -1,30 +1,14 @@
 import multer from "multer";
-import path from "path";
-import { fileURLToPath } from "url";
-import fs from "fs";
-import crypto from "crypto";
+import { CloudinaryStorage } from "multer-storage-cloudinary";
+import cloudinary from "../config/cloudinary.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Ensure upload directory exists
-const uploadDir = path.join(__dirname, "../../uploads/videos");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure storage
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    // Generate unique filename using crypto and timestamp
-    const uniqueId = crypto.randomUUID();
-    const timestamp = Date.now();
-    const ext = path.extname(file.originalname);
-    const uniqueName = `${uniqueId}-${timestamp}${ext}`;
-    cb(null, uniqueName);
+// Configure Cloudinary storage
+const storage = new CloudinaryStorage({
+  cloudinary: cloudinary,
+  params: {
+    folder: "video-uploader/videos",
+    resource_type: "video",
+    allowed_formats: ["mp4", "webm", "avi", "mov", "mkv"],
   },
 });
 

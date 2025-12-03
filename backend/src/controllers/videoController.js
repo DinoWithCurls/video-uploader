@@ -1,7 +1,6 @@
 import Video from "../models/Video.js";
 import { processVideo } from "../services/videoProcessor.js";
-import fs from "fs";
-import path from "path";
+import cloudinary from "../config/cloudinary.js";
 
 /**
  * Upload a new video
@@ -16,8 +15,10 @@ export const uploadVideo = async (req, res) => {
     const { title, description } = req.body;
 
     if (!title) {
-      // Clean up uploaded file
-      fs.unlinkSync(req.file.path);
+      // Clean up uploaded file (delete from Cloudinary)
+      if (req.file.filename) {
+        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "video" });
+      }
       return res.status(400).json({ message: "Title is required" });
     }
 
@@ -26,8 +27,8 @@ export const uploadVideo = async (req, res) => {
       title,
       description: description || "",
       filename: req.file.originalname,
-      storedFilename: req.file.filename,
-      filepath: req.file.path,
+      storedFilename: req.file.filename, // Cloudinary public_id
+      filepath: req.file.path, // Cloudinary secure_url
       filesize: req.file.size,
       mimetype: req.file.mimetype,
       uploadedBy: req.user.id,
@@ -59,8 +60,8 @@ export const uploadVideo = async (req, res) => {
     console.error("Upload error:", error);
 
     // Clean up file if it was uploaded
-    if (req.file && fs.existsSync(req.file.path)) {
-      fs.unlinkSync(req.file.path);
+    if (req.file && req.file.filename) {
+      await cloudinary.uploader.destroy(req.file.filename, { resource_type: "video" });
     }
 
     res.status(500).json({ message: "Error uploading video" });
@@ -163,53 +164,15 @@ export const getVideo = async (req, res) => {
 };
 
 /**
- * Stream video with range request support
+ * Stream video (Redirect to Cloudinary)
  * GET /api/videos/:id/stream
  */
 export const streamVideo = async (req, res) => {
   try {
     const video = req.video;
-    const videoPath = video.filepath;
-
-    // Check if file exists
-    if (!fs.existsSync(videoPath)) {
-      return res.status(404).json({ message: "Video file not found" });
-    }
-
-    const stat = fs.statSync(videoPath);
-    const fileSize = stat.size;
-    const range = req.headers.range;
-
-    if (range) {
-      // Parse range header
-      const parts = range.replace(/bytes=/, "").split("-");
-      const start = parseInt(parts[0], 10);
-      const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
-      const chunksize = end - start + 1;
-
-      // Create read stream for the requested range
-      const file = fs.createReadStream(videoPath, { start, end });
-
-      // Set headers for partial content
-      const head = {
-        "Content-Range": `bytes ${start}-${end}/${fileSize}`,
-        "Accept-Ranges": "bytes",
-        "Content-Length": chunksize,
-        "Content-Type": video.mimetype,
-      };
-
-      res.writeHead(206, head);
-      file.pipe(res);
-    } else {
-      // No range requested, send entire file
-      const head = {
-        "Content-Length": fileSize,
-        "Content-Type": video.mimetype,
-      };
-
-      res.writeHead(200, head);
-      fs.createReadStream(videoPath).pipe(res);
-    }
+    // Redirect to Cloudinary URL
+    // Cloudinary handles range requests and streaming automatically
+    res.redirect(video.filepath);
   } catch (error) {
     console.error("Stream video error:", error);
     res.status(500).json({ message: "Error streaming video" });
@@ -252,9 +215,9 @@ export const deleteVideo = async (req, res) => {
   try {
     const video = req.video;
 
-    // Delete file from filesystem
-    if (fs.existsSync(video.filepath)) {
-      fs.unlinkSync(video.filepath);
+    // Delete from Cloudinary
+    if (video.storedFilename) {
+      await cloudinary.uploader.destroy(video.storedFilename, { resource_type: "video" });
     }
 
     // Delete from database
