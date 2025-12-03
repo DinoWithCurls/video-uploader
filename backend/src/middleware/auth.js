@@ -3,7 +3,13 @@ import User from "../models/User.js";
 
 export const auth = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(" ")[1];
+    // Extract token from Authorization header or query parameter
+    // Query parameter is needed for video streaming since <video> elements can't set headers
+    let token = req.headers.authorization?.split(" ")[1];
+    
+    if (!token && req.query.token) {
+      token = req.query.token;
+    }
 
     if (!token) return res.status(401).json({ message: "No token provided" });
 

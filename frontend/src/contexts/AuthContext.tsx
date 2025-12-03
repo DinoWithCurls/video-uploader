@@ -11,6 +11,7 @@ type User = {
 
 export type AuthContextType = {
   user: User | null;
+  token: string | null;
   loading: boolean;
   error: string | null;
   register: (userData: any) => Promise<{ success: boolean; error?: string }>;
@@ -22,6 +23,7 @@ export const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -31,14 +33,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem("token");
-    if (token) {
+    const storedToken = localStorage.getItem("token");
+    if (storedToken) {
       try {
         const response = await authAPI.getCurrentUser();
         setUser(response.data.user);
+        setToken(storedToken);
       } catch (err) {
         console.error(err);
         localStorage.removeItem("token");
+        setToken(null);
       }
     }
     setLoading(false);
@@ -48,8 +52,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setError(null);
       const response = await authAPI.register(userData);
-      const { token, user } = response.data;
-      localStorage.setItem("token", token);
+      const { token: newToken, user } = response.data;
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
       setUser(user);
       return { success: true };
     } catch (err: any) {
@@ -64,8 +69,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setError(null);
       const response = await authAPI.login(credentials);
-      const { token, user } = response.data;
-      localStorage.setItem("token", token);
+      const { token: newToken, user } = response.data;
+      localStorage.setItem("token", newToken);
+      setToken(newToken);
       setUser(user);
       return { success: true };
     } catch (err: any) {
@@ -77,12 +83,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = () => {
     localStorage.removeItem("token");
+    setToken(null);
     setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, error, register, login, logout }}
+      value={{ user, token, loading, error, register, login, logout }}
     >
       {children}
     </AuthContext.Provider>

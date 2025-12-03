@@ -28,8 +28,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
       return;
     }
 
-    // Create socket connection
-    const newSocket = io("http://localhost:5000", {
+    // Connect to Socket.io server
+    const socketUrl = import.meta.env.VITE_API_URL?.replace('/api', '') || "http://localhost:3001";
+    const newSocket = io(socketUrl, {
       auth: { token },
       autoConnect: true,
     });
