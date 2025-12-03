@@ -98,11 +98,8 @@ export const getVideos = async (req, res) => {
       organizationId: req.user.organizationId
     };
 
-    // Non-admin users can only see their own videos
-    if (req.user.role !== "admin") {
-      query.uploadedBy = req.user.id;
-    }
-
+    // All users can see all videos in their organization
+    // Admins, editors, and viewers all have access to view organization videos₹
     // Apply filters
     if (status) {
       query.status = status;
