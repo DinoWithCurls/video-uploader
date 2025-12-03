@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, type ReactNode } from "react";
 import { authAPI } from "../services/api";
 
-type User = {
+export type User = {
   id?: string | number;
   name?: string;
   email?: string;

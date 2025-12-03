@@ -9,6 +9,7 @@ import { useAuth } from "./hooks/useAuth";
 import VideoLibrary from "./pages/VideoLibrary.tsx";
 import VideoUploadPage from "./pages/VideoUploadPage.tsx";
 import VideoDetailPage from "./pages/VideoDetailPage.tsx";
+import UserManagement from "./components/admin/UserManagement.tsx";
 
 // Placeholder dashboard
 const Dashboard = () => {
@@ -32,7 +33,7 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <a
             href="/videos"
             className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
@@ -53,6 +54,19 @@ const Dashboard = () => {
               <h2 className="text-xl font-semibold mb-2">Upload Video</h2>
               <p className="text-gray-600">
                 Upload a new video for processing
+              </p>
+            </a>
+          )}
+
+          {user?.role === "admin" && (
+            <a
+              href="/admin"
+              className="bg-white p-6 rounded-lg shadow hover:shadow-lg transition-shadow"
+            >
+              <div className="text-4xl mb-4">👥</div>
+              <h2 className="text-xl font-semibold mb-2">User Management</h2>
+              <p className="text-gray-600">
+                Manage users and update their roles
               </p>
             </a>
           )}
@@ -100,6 +114,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <VideoDetailPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin"
+                element={
+                  <ProtectedRoute roles={["admin"]}>
+                    <UserManagement />
                   </ProtectedRoute>
                 }
               />
