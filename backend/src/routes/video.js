@@ -13,6 +13,7 @@ import {
   requireRole,
   requireOwnershipOrAdmin,
   canModify,
+  requireOrganizationAccess,
 } from "../middleware/rbac.js";
 import upload from "../middleware/upload.js";
 
@@ -35,11 +36,11 @@ router.get("/", getVideos);
 // Admin: Get all videos from all users
 router.get("/admin/all", requireRole("admin"), getAllVideosAdmin);
 
-// Get single video (must own or be admin)
-router.get("/:id", requireOwnershipOrAdmin, getVideo);
+// Get single video (all organization members can view)
+router.get("/:id", requireOrganizationAccess, getVideo);
 
-// Stream video (must own or be admin)
-router.get("/:id/stream", requireOwnershipOrAdmin, streamVideo);
+// Stream video (all organization members can view)
+router.get("/:id/stream", requireOrganizationAccess, streamVideo);
 
 // Update video (must own or be admin, and be editor/admin role)
 router.put("/:id", canModify, updateVideo);

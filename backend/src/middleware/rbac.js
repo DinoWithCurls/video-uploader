@@ -100,3 +100,43 @@ export const canModify = async (req, res, next) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+/**
+ * Middleware to check if user can access a video for viewing
+ * All organization members can view videos in their organization
+ */
+export const requireOrganizationAccess = async (req, res, next) => {
+  try {
+    console.log('[RBAC.requireOrganizationAccess] Entry:', { videoId: req.params.id, userId: req.user.id, role: req.user.role, orgId: req.user.organizationId });
+    const videoId = req.params.id;
+
+    if (!videoId) {
+      console.log('[RBAC.requireOrganizationAccess] No video ID provided');
+      return res.status(400).json({ message: "Video ID is required" });
+    }
+
+    // CRITICAL: Filter by organizationId to prevent cross-tenant access
+    // UNLESS user is superadmin
+    const query = { _id: videoId };
+    if (req.user.role !== 'superadmin') {
+      query.organizationId = req.user.organizationId;
+    }
+
+    const video = await Video.findOne(query);
+
+    if (!video) {
+      console.log('[RBAC.requireOrganizationAccess] Video not found or access denied:', videoId);
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    // All organization members can view videos
+    // Attach video to request for further use
+    req.video = video;
+    console.log('[RBAC.requireOrganizationAccess] Success: Organization member authorized');
+    next();
+  } catch (error) {
+    console.error('[RBAC.requireOrganizationAccess] Error:', error);
+    res.status(500).json({ message: "Error checking permissions" });
+  }
+};
+
