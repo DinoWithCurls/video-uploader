@@ -392,7 +392,7 @@ vercel --prod
 ### Backend (.env)
 
 ```env
-PORT=5000
+PORT=3001
 MONGODB_URI=mongodb://localhost:27017/video-uploader
 JWT_SECRET=your-secret-key-change-in-production
 NODE_ENV=development
@@ -403,7 +403,7 @@ FRONTEND_URL=http://localhost:5173
 ### Frontend (.env)
 
 ```env
-VITE_API_URL=http://localhost:5000
+VITE_API_URL=http://localhost:5173
 ```
 
 ## 🤝 Contributing
@@ -430,7 +430,7 @@ This project is licensed under the MIT License.
 
 For issues and questions:
 - Create an issue in the repository
-- Contact: [your-email@example.com]
+- Contact: adityarajsingh64@gmail.com
 
 ---
 
