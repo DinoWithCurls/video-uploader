@@ -29,16 +29,14 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["viewer", "editor", "admin"],
+    enum: ["viewer", "editor", "admin", "superadmin"],
     default: "viewer",
   },
   organizationId: {
-    type: String,
-    default: null,
-  },
-  organizationName: {
-    type: String,
-    default: null,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organization",
+    required: false, // Optional for superadmins
+    index: true,
   },
   isActive: {
     type: Boolean,

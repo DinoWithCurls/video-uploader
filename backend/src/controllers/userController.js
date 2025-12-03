@@ -6,8 +6,11 @@ import User from "../models/User.js";
  */
 export const getAllUsers = async (req, res) => {
   try {
-    console.log('[UserController.getAllUsers] Entry:', { userId: req.user.id, role: req.user.role });
-    const users = await User.find().select("-password").sort({ createdAt: -1 });
+    console.log('[UserController.getAllUsers] Entry:', { userId: req.user.id, role: req.user.role, orgId: req.user.organizationId });
+    // Filter users by organization
+    const users = await User.find({ organizationId: req.user.organizationId })
+      .select("-password")
+      .sort({ createdAt: -1 });
     console.log('[UserController.getAllUsers] Success:', { count: users.length });
     res.json(users);
   } catch (error) {
@@ -37,14 +40,18 @@ export const updateUserRole = async (req, res) => {
       return res.status(400).json({ message: "You cannot change your own role" });
     }
 
-    const user = await User.findByIdAndUpdate(
-      userId,
+    // CRITICAL: Only update users within same organization
+    const user = await User.findOneAndUpdate(
+      { 
+        _id: userId,
+        organizationId: req.user.organizationId // Enforce tenant isolation
+      },
       { role },
       { new: true }
     ).select("-password");
 
     if (!user) {
-      console.log('[UserController.updateUserRole] User not found:', userId);
+      console.log('[UserController.updateUserRole] User not found or access denied:', userId);
       return res.status(404).json({ message: "User not found" });
     }
 

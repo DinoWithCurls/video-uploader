@@ -1,5 +1,6 @@
 import React, { createContext, useState, useCallback, useEffect } from "react";
 import type { Video, VideoFilters } from "../services/videoService";
+import logger from "../utils/logger";
 import {
   getVideos as fetchVideosAPI,
   uploadVideo as uploadVideoAPI,
@@ -144,7 +145,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
   // Subscribe to Socket.io events for real-time updates
   useEffect(() => {
     const unsubscribeStart = subscribe("video:processing:start", (data) => {
-      console.log("Processing started:", data);
+      logger.info("[VideoContext] Processing started:", data);
       setVideos((prev) =>
         prev.map((v) =>
           v._id === data.videoId
@@ -157,7 +158,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribeProgress = subscribe(
       "video:processing:progress",
       (data) => {
-        console.log("Processing progress:", data);
+        logger.info("[VideoContext] Processing progress:", data);
         setVideos((prev) =>
           prev.map((v) =>
             v._id === data.videoId
@@ -171,7 +172,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
     const unsubscribeComplete = subscribe(
       "video:processing:complete",
       (data) => {
-        console.log("Processing complete:", data);
+        logger.info("[VideoContext] Processing complete:", data);
         setVideos((prev) =>
           prev.map((v) =>
             v._id === data.videoId

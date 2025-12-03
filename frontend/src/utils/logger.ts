@@ -1,68 +1,49 @@
-import LogRocket from 'logrocket';
+/**
+ * Logger utility for frontend
+ * In production, logs are disabled in browser console.
+ * All logs are sent to backend/Render instead.
+ */
 
 const isDevelopment = import.meta.env.MODE === 'development';
-const LOGROCKET_APP_ID = import.meta.env.VITE_LOGROCKET_APP_ID;
 
-// Initialize LogRocket only in production
-if (!isDevelopment && LOGROCKET_APP_ID) {
-  LogRocket.init(LOGROCKET_APP_ID);
-}
-
-/**
- * Centralized logger that uses console in development and LogRocket in production
- */
-class Logger {
-  log(message: string, data?: any) {
+const logger = {
+  log: (...args: any[]) => {
+    // Only log to browser console in development
     if (isDevelopment) {
-      console.log(message, data || '');
-    } else if (LOGROCKET_APP_ID) {
-      LogRocket.log(message, data);
+      console.log(...args);
     }
-  }
+    // In production, logs are handled by backend
+  },
 
-  info(message: string, data?: any) {
+  error: (...args: any[]) => {
+    // Only log to browser console in development
     if (isDevelopment) {
-      console.info(message, data || '');
-    } else if (LOGROCKET_APP_ID) {
-      LogRocket.info(message, data);
+      console.error(...args);
     }
-  }
+    // In production, errors are logged on backend
+  },
 
-  warn(message: string, data?: any) {
+  warn: (...args: any[]) => {
     if (isDevelopment) {
-      console.warn(message, data || '');
-    } else if (LOGROCKET_APP_ID) {
-      LogRocket.warn(message, data);
+      console.warn(...args);
     }
-  }
+  },
 
-  error(message: string, data?: any) {
+  info: (...args: any[]) => {
     if (isDevelopment) {
-      console.error(message, data || '');
-    } else if (LOGROCKET_APP_ID) {
-      LogRocket.error(message, data);
+      console.info(...args);
     }
-  }
+  },
 
-  /**
-   * Identify user in LogRocket (call after login)
-   */
-  identifyUser(userId: string, userInfo?: { name?: string; email?: string; role?: string }) {
-    if (!isDevelopment && LOGROCKET_APP_ID) {
-      LogRocket.identify(userId, userInfo);
+  identifyUser: (userId: string, userInfo?: any) => {
+    if (isDevelopment) {
+      console.log('[Logger] Identify user:', userId, userInfo);
     }
-  }
+  },
 
-  /**
-   * Get LogRocket session URL (for support/debugging)
-   */
-  getSessionURL(): string | null {
-    if (!isDevelopment && LOGROCKET_APP_ID) {
-      return LogRocket.sessionURL;
-    }
+  getSessionURL: () => {
     return null;
-  }
-}
+  },
+};
 
-export const logger = new Logger();
 export default logger;

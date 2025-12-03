@@ -55,6 +55,12 @@ const videoSchema = new mongoose.Schema({
     ref: "User",
     required: true,
   },
+  organizationId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Organization",
+    required: true,
+    index: true,
+  },
   status: {
     type: String,
     enum: ["pending", "processing", "completed", "failed"],
@@ -91,9 +97,9 @@ const videoSchema = new mongoose.Schema({
 });
 
 // Index for efficient queries
-videoSchema.index({ uploadedBy: 1, createdAt: -1 });
-videoSchema.index({ status: 1 });
-videoSchema.index({ sensitivityStatus: 1 });
+videoSchema.index({ organizationId: 1, uploadedBy: 1, createdAt: -1 });
+videoSchema.index({ organizationId: 1, status: 1 });
+videoSchema.index({ organizationId: 1, sensitivityStatus: 1 });
 
 // Update the updatedAt timestamp before saving
 videoSchema.pre("save", function () {

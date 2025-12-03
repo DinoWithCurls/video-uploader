@@ -2,14 +2,19 @@ import { createContext, useState, useEffect, type ReactNode } from "react";
 import { authAPI } from "../services/api";
 import logger from "../utils/logger";
 
-export type User = {
-  _id?: string | number;
-  id?: string | number;
-  name?: string;
-  email?: string;
-  role?: string;
-  [key: string]: any;
-};
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: "viewer" | "editor" | "admin" | "superadmin";
+  organizationId?: string; // Optional for superadmin
+  organization?: {
+    id: string;
+    name: string;
+    slug: string;
+    plan: string;
+  };
+}
 
 export type AuthContextType = {
   user: User | null;

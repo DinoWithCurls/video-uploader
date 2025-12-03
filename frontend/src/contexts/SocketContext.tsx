@@ -1,6 +1,7 @@
 import React, { createContext, useEffect, useState, useCallback } from "react";
 import { io, Socket } from "socket.io-client";
 import { useAuth } from "../hooks/useAuth";
+import logger from "../utils/logger";
 
 interface SocketContextType {
   socket: Socket | null;
@@ -36,12 +37,12 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
     });
 
     newSocket.on("connect", () => {
-      console.log("Socket.io connected");
+      logger.info("[SocketContext] Socket.io connected");
       setConnected(true);
     });
 
     newSocket.on("disconnect", () => {
-      console.log("Socket.io disconnected");
+      logger.info("[SocketContext] Socket.io disconnected");
       setConnected(false);
     });
 

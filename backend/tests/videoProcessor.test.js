@@ -7,20 +7,32 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import Organization from "../src/models/Organization.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let testUser;
+let organization;
 
 beforeEach(async () => {
   await User.deleteMany({});
   await Video.deleteMany({});
+  await Organization.deleteMany({});
+
+  // Create organization
+  organization = await Organization.create({
+    name: "Test Org",
+    slug: "test-org",
+    plan: "free"
+  });
 
   testUser = await User.create({
     name: "Test User",
     email: "test@test.com",
     password: "password123",
     role: "editor",
+    organizationId: organization._id
   });
 });
 
@@ -140,6 +152,7 @@ describe("Video Processing Pipeline Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: testUser._id,
+      organizationId: organization._id,
       status: "completed",
       sensitivityStatus: "flagged",
       sensitivityScore: 75,
@@ -161,6 +174,7 @@ describe("Video Processing Pipeline Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: testUser._id,
+      organizationId: organization._id,
       status: "processing",
       processingProgress: 0,
     });
@@ -194,6 +208,7 @@ describe("Video Metadata Tests", () => {
       filesize: 5000000,
       mimetype: "video/mp4",
       uploadedBy: testUser._id,
+      organizationId: organization._id,
       duration: 120.5,
       resolution: {
         width: 1920,
@@ -296,6 +311,7 @@ describe("Success Criteria - Video Processing", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: testUser._id,
+      organizationId: organization._id,
       status: "processing",
     });
 

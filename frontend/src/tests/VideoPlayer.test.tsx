@@ -5,7 +5,7 @@ import type { Video } from '../services/videoService'
 
 // Mock getStreamUrl
 vi.mock('../services/videoService', () => ({
-  getStreamUrl: (id: string) => `http://localhost:5000/api/videos/${id}/stream`,
+  getStreamUrl: (id: string) => `http://localhost:3001/api/videos/${id}/stream`,
 }))
 
 const mockCompletedVideo: Video = {

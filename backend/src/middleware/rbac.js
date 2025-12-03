@@ -34,7 +34,7 @@ export const requireRole = (roles) => {
  */
 export const requireOwnershipOrAdmin = async (req, res, next) => {
   try {
-    console.log('[RBAC.requireOwnershipOrAdmin] Entry:', { videoId: req.params.id, userId: req.user.id, role: req.user.role });
+    console.log('[RBAC.requireOwnershipOrAdmin] Entry:', { videoId: req.params.id, userId: req.user.id, role: req.user.role, orgId: req.user.organizationId });
     const videoId = req.params.id;
 
     if (!videoId) {
@@ -42,35 +42,39 @@ export const requireOwnershipOrAdmin = async (req, res, next) => {
       return res.status(400).json({ message: "Video ID is required" });
     }
 
-    const video = await Video.findById(videoId);
+    // CRITICAL: Filter by organizationId to prevent cross-tenant access
+    // UNLESS user is superadmin
+    const query = { _id: videoId };
+    if (req.user.role !== 'superadmin') {
+      query.organizationId = req.user.organizationId;
+    }
+
+    const video = await Video.findOne(query);
 
     if (!video) {
-      console.log('[RBAC.requireOwnershipOrAdmin] Video not found:', videoId);
+      console.log('[RBAC.requireOwnershipOrAdmin] Video not found or access denied:', videoId);
       return res.status(404).json({ message: "Video not found" });
     }
 
-    // Admin can access everything
-    if (req.user.role === "admin") {
-      console.log('[RBAC.requireOwnershipOrAdmin] Admin access granted');
-      req.video = video;
-      return next();
-    }
+    // Check if user is the owner or admin or superadmin
+    const isOwner = video.uploadedBy.toString() === req.user.id;
+    const isAdmin = req.user.role === "admin";
+    const isSuperAdmin = req.user.role === "superadmin";
 
-    // Check ownership
-    if (video.uploadedBy.toString() !== req.user.id) {
-      console.log('[RBAC.requireOwnershipOrAdmin] Access denied: Not owner', { videoOwner: video.uploadedBy, requestUser: req.user.id });
+    if (!isOwner && !isAdmin && !isSuperAdmin) {
+      console.log('[RBAC.requireOwnershipOrAdmin] User is not owner or admin');
       return res.status(403).json({
-        message: "Access denied. You can only access your own videos.",
+        message: "You don't have permission to access this video",
       });
     }
 
-    // Attach video to request for use in controller
-    console.log('[RBAC.requireOwnershipOrAdmin] Success: Owner access granted');
+    // Attach video to request for further use
     req.video = video;
+    console.log('[RBAC.requireOwnershipOrAdmin] Success: User authorized');
     next();
   } catch (error) {
-    console.error("[RBAC.requireOwnershipOrAdmin] Error:", error);
-    res.status(500).json({ message: "Server error" });
+    console.error('[RBAC.requireOwnershipOrAdmin] Error:', error);
+    res.status(500).json({ message: "Error checking permissions" });
   }
 };
 
@@ -82,7 +86,7 @@ export const canModify = async (req, res, next) => {
   try {
     console.log('[RBAC.canModify] Entry:', { userId: req.user.id, role: req.user.role });
     // Check role first
-    if (!["editor", "admin"].includes(req.user.role)) {
+    if (!["editor", "admin", "superadmin"].includes(req.user.role)) {
       console.log('[RBAC.canModify] Insufficient role:', req.user.role);
       return res.status(403).json({
         message: "Only editors and admins can modify videos",

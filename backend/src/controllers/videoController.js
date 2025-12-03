@@ -36,6 +36,7 @@ export const uploadVideo = async (req, res) => {
       filesize: req.file.size,
       mimetype: req.file.mimetype,
       uploadedBy: req.user.id,
+      organizationId: req.user.organizationId,
       status: "pending",
     });
 
@@ -92,8 +93,10 @@ export const getVideos = async (req, res) => {
       limit = 20,
     } = req.query;
 
-    // Build query
-    const query = {};
+    // Build query - ALWAYS filter by organization
+    const query = {
+      organizationId: req.user.organizationId
+    };
 
     // Non-admin users can only see their own videos
     if (req.user.role !== "admin") {
@@ -264,8 +267,10 @@ export const getAllVideosAdmin = async (req, res) => {
       limit = 20,
     } = req.query;
 
-    // Build query (no user filter for admin)
-    const query = {};
+    // Build query - ALWAYS filter by organization (even for admin)
+    const query = {
+      organizationId: req.user.organizationId
+    };
 
     if (status) {
       query.status = status;

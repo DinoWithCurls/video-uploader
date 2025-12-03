@@ -26,8 +26,14 @@ export const auth = async (req, res, next) => {
       return res.status(401).json({ message: "User not found" });
     }
 
-    req.user = user; // attach user to request
-    console.log('[AuthMiddleware.auth] Success:', { userId: user._id, role: user.role });
+    // Attach user info to request with organizationId from JWT
+    req.user = {
+      id: user._id,
+      email: user.email,
+      role: user.role,
+      organizationId: decoded.organizationId || user.organizationId,
+    };
+    console.log('[AuthMiddleware.auth] Success:', { userId: req.user.id, role: req.user.role, orgId: req.user.organizationId });
 
     next();
   } catch (err) {

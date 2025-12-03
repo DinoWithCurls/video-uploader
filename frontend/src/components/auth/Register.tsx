@@ -7,6 +7,7 @@ const Register = () => {
     name: "",
     email: "",
     password: "",
+    organizationName: "", // Optional: defaults to "{name}'s Organization"
   });
   const [loading, setLoading] = useState(false);
   const { register, error } = useAuth();
@@ -73,6 +74,21 @@ const Register = () => {
             required
             minLength={6}
           />
+        </div>
+
+        <div className="mb-4">
+          <label className="block text-gray-700 mb-2">Organization Name (Optional)</label>
+          <input
+            type="text"
+            name="organizationName"
+            value={formData.organizationName}
+            onChange={handleChange}
+            className="w-full px-3 py-2 border rounded-lg"
+            placeholder="Leave blank to use your name"
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            This will be your organization's name. You can change it later.
+          </p>
         </div>
 
         <button

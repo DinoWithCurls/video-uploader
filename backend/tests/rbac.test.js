@@ -3,14 +3,24 @@ import request from "supertest";
 import app from "../app.js";
 import User from "../src/models/User.js";
 import Video from "../src/models/Video.js";
+import Organization from "../src/models/Organization.js";
 import jwt from "jsonwebtoken";
 
 let viewerToken, editorToken, adminToken;
 let viewerUser, editorUser, adminUser;
+let organization;
 
 beforeEach(async () => {
   await User.deleteMany({});
   await Video.deleteMany({});
+  await Organization.deleteMany({});
+
+  // Create organization
+  organization = await Organization.create({
+    name: "Test Org",
+    slug: "test-org",
+    plan: "free"
+  });
 
   // Create users with different roles
   viewerUser = await User.create({
@@ -18,6 +28,7 @@ beforeEach(async () => {
     email: "viewer@test.com",
     password: "password123",
     role: "viewer",
+    organizationId: organization._id
   });
 
   editorUser = await User.create({
@@ -25,6 +36,7 @@ beforeEach(async () => {
     email: "editor@test.com",
     password: "password123",
     role: "editor",
+    organizationId: organization._id
   });
 
   adminUser = await User.create({
@@ -32,21 +44,22 @@ beforeEach(async () => {
     email: "admin@test.com",
     password: "password123",
     role: "admin",
+    organizationId: organization._id
   });
 
   // Generate tokens
   viewerToken = jwt.sign(
-    { id: viewerUser._id, email: viewerUser.email, role: viewerUser.role },
+    { id: viewerUser._id, email: viewerUser.email, role: viewerUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 
   editorToken = jwt.sign(
-    { id: editorUser._id, email: editorUser.email, role: editorUser.role },
+    { id: editorUser._id, email: editorUser.email, role: editorUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 
   adminToken = jwt.sign(
-    { id: adminUser._id, email: adminUser.email, role: adminUser.role },
+    { id: adminUser._id, email: adminUser.email, role: adminUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 });
@@ -62,6 +75,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: viewerUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -91,6 +105,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: viewerUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -111,6 +126,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: viewerUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -151,6 +167,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: editorUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -171,6 +188,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: editorUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -190,6 +208,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: adminUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -230,6 +249,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: editorUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -241,6 +261,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: viewerUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -261,6 +282,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: editorUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 
@@ -281,6 +303,7 @@ describe("Role-Based Access Control Tests", () => {
         filesize: 1000000,
         mimetype: "video/mp4",
         uploadedBy: editorUser._id,
+        organizationId: organization._id,
         status: "completed",
       });
 

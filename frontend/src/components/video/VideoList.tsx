@@ -66,8 +66,9 @@ const VideoList: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Status Filter */}
           <div>
-            <label className="block text-sm font-medium mb-1">Status</label>
+            <label htmlFor="status-filter" className="block text-sm font-medium mb-1">Status</label>
             <select
+              id="status-filter"
               value={filters.status}
               onChange={(e) => handleFilterChange("status", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -82,10 +83,11 @@ const VideoList: React.FC = () => {
 
           {/* Sensitivity Filter */}
           <div>
-            <label className="block text-sm font-medium mb-1">
+            <label htmlFor="sensitivity-filter" className="block text-sm font-medium mb-1">
               Sensitivity
             </label>
             <select
+              id="sensitivity-filter"
               value={filters.sensitivityStatus}
               onChange={(e) =>
                 handleFilterChange("sensitivityStatus", e.target.value)
@@ -101,8 +103,9 @@ const VideoList: React.FC = () => {
 
           {/* Sort By */}
           <div>
-            <label className="block text-sm font-medium mb-1">Sort By</label>
+            <label htmlFor="sort-by-filter" className="block text-sm font-medium mb-1">Sort By</label>
             <select
+              id="sort-by-filter"
               value={filters.sortBy}
               onChange={(e) => handleFilterChange("sortBy", e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -116,8 +119,9 @@ const VideoList: React.FC = () => {
 
           {/* Order */}
           <div>
-            <label className="block text-sm font-medium mb-1">Order</label>
+            <label htmlFor="order-filter" className="block text-sm font-medium mb-1">Order</label>
             <select
+              id="order-filter"
               value={filters.order}
               onChange={(e) =>
                 handleFilterChange("order", e.target.value as "asc" | "desc")

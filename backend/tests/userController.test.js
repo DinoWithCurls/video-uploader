@@ -133,7 +133,7 @@ describe("User Controller Tests", () => {
       const res = await request(app)
         .put(`/api/users/${editorUser.id}/role`)
         .set("Authorization", `Bearer ${adminToken}`)
-        .send({ role: "superadmin" });
+        .send({ role: "invalidrole" });
 
       expect(res.status).toBe(400);
       expect(res.body.message).toContain("Invalid role");

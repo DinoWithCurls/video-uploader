@@ -8,11 +8,14 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+import Organization from "../src/models/Organization.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let viewerToken, editorToken, adminToken;
 let viewerUser, editorUser, adminUser;
+let organization;
 
 // Helper function to create test video file
 const createTestVideoFile = () => {
@@ -30,6 +33,14 @@ beforeEach(async () => {
   // Clear and recreate test users for each test
   await User.deleteMany({});
   await Video.deleteMany({});
+  await Organization.deleteMany({});
+
+  // Create organization
+  organization = await Organization.create({
+    name: "Test Org",
+    slug: "test-org",
+    plan: "free"
+  });
 
   // Create test users
   viewerUser = await User.create({
@@ -37,6 +48,7 @@ beforeEach(async () => {
     email: "viewer@test.com",
     password: "password123",
     role: "viewer",
+    organizationId: organization._id
   });
 
   editorUser = await User.create({
@@ -44,6 +56,7 @@ beforeEach(async () => {
     email: "editor@test.com",
     password: "password123",
     role: "editor",
+    organizationId: organization._id
   });
 
   adminUser = await User.create({
@@ -51,21 +64,22 @@ beforeEach(async () => {
     email: "admin@test.com",
     password: "password123",
     role: "admin",
+    organizationId: organization._id
   });
 
   // Generate tokens
   viewerToken = jwt.sign(
-    { id: viewerUser._id, email: viewerUser.email, role: viewerUser.role },
+    { id: viewerUser._id, email: viewerUser.email, role: viewerUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 
   editorToken = jwt.sign(
-    { id: editorUser._id, email: editorUser.email, role: editorUser.role },
+    { id: editorUser._id, email: editorUser.email, role: editorUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 
   adminToken = jwt.sign(
-    { id: adminUser._id, email: adminUser.email, role: adminUser.role },
+    { id: adminUser._id, email: adminUser.email, role: adminUser.role, organizationId: organization._id },
     process.env.JWT_SECRET || "test-secret"
   );
 });
@@ -170,6 +184,7 @@ describe("Video Listing Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "completed",
       sensitivityStatus: "safe",
     });
@@ -183,6 +198,7 @@ describe("Video Listing Tests", () => {
       filesize: 2000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "processing",
       sensitivityStatus: "pending",
     });
@@ -196,6 +212,7 @@ describe("Video Listing Tests", () => {
       filesize: 3000000,
       mimetype: "video/mp4",
       uploadedBy: adminUser._id,
+      organizationId: organization._id,
       status: "completed",
       sensitivityStatus: "flagged",
       flaggedReasons: ["Test reason"],
@@ -296,6 +313,7 @@ describe("Multi-Tenant Isolation Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
 
@@ -308,6 +326,7 @@ describe("Multi-Tenant Isolation Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: adminUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
   });
@@ -369,6 +388,7 @@ describe("Video Update Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
   });
@@ -420,6 +440,7 @@ describe("Video Delete Tests", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
   });
@@ -472,6 +493,7 @@ describe("Success Criteria Verification", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: editorUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
 
@@ -483,6 +505,7 @@ describe("Success Criteria Verification", () => {
       filesize: 1000000,
       mimetype: "video/mp4",
       uploadedBy: adminUser._id,
+      organizationId: organization._id,
       status: "completed",
     });
 

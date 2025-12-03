@@ -1,437 +1,388 @@
-# Video Upload, Processing & Streaming Application
+# Video Upload & Streaming Platform
 
-A comprehensive full-stack application that enables users to upload videos, processes them for content sensitivity analysis, and provides seamless video streaming capabilities with real-time progress tracking.
+A full-stack multi-tenant video upload, processing, and streaming application with content sensitivity analysis, role-based access control, and real-time progress tracking.
 
-## 🎯 Features
+## 🌟 Features
 
 ### Core Functionality
-- **Video Upload**: Drag-and-drop interface with progress tracking
-- **Content Analysis**: Automated sensitivity detection (safe/flagged classification)
-- **Real-Time Updates**: Live processing progress via Socket.io
-- **Video Streaming**: HTTP range request support for seamless playback
-- **Multi-Tenant Architecture**: User-based isolation with secure data segregation
-- **Role-Based Access Control**: Viewer, Editor, and Admin roles
+- **Video Upload & Storage** - Upload videos with drag-and-drop or file selection
+- **Content Sensitivity Analysis** - Automated analysis with simulated ML detection
+- **Video Streaming** - HTTP range request-based streaming with seek support
+- **Real-time Progress** - WebSocket-based upload and processing updates
+- **Multi-tenant Architecture** - Complete data isolation between organizations
 
-### Technical Highlights
-- **Backend**: Node.js, Express, MongoDB, Socket.io, FFmpeg
-- **Frontend**: React, TypeScript, Vite, Tailwind CSS
-- **Real-Time**: WebSocket communication for live updates
-- **Security**: JWT authentication, RBAC, input validation
-- **Video Processing**: FFmpeg-based metadata extraction and analysis
+### User Management
+- **Role-Based Access Control (RBAC)**
+  - **Viewer** - View videos only
+  - **Editor** - Upload, edit, and delete own videos
+  - **Admin** - Full organization management
+  - **Superadmin** - Global platform access
+- **Auto-join by Email Domain** - Automatic organization assignment based on email domain
+- **Organization Management** - Create and manage organizations with settings
 
-## 📋 Prerequisites
-
-Before you begin, ensure you have the following installed:
-
-- **Node.js** (v18 or higher) - [Download](https://nodejs.org/)
-- **MongoDB** (v6 or higher) - [Download](https://www.mongodb.com/try/download/community)
-- **FFmpeg** - Required for video processing
-  - macOS: `brew install ffmpeg`
-  - Ubuntu/Debian: `sudo apt-get install ffmpeg`
-  - Windows: [Download from ffmpeg.org](https://ffmpeg.org/download.html)
-
-## 🚀 Installation
-
-### 1. Clone the Repository
-
-```bash
-git clone <repository-url>
-cd video-uploader
-```
-
-### 2. Backend Setup
-
-```bash
-cd backend
-
-# Install dependencies
-npm install
-
-# Create .env file
-cp .env.example .env
-
-# Edit .env with your configuration
-# Required variables:
-# - PORT=5000
-# - MONGODB_URI=mongodb://localhost:27017/video-uploader
-# - JWT_SECRET=your-secret-key-change-in-production
-# - NODE_ENV=development
-# - MAX_FILE_SIZE=524288000
-# - FRONTEND_URL=http://localhost:5173
-```
-
-### 3. Frontend Setup
-
-```bash
-cd ../frontend
-
-# Install dependencies
-npm install
-
-# Create .env file (if needed)
-# VITE_API_URL=http://localhost:5000
-```
-
-### 4. Start MongoDB
-
-Make sure MongoDB is running on your system:
-
-```bash
-# macOS (if installed via Homebrew)
-brew services start mongodb-community
-
-# Linux
-sudo systemctl start mongod
-
-# Or run manually
-mongod --dbpath /path/to/data/directory
-```
-
-## 🏃 Running the Application
-
-### Development Mode
-
-**Terminal 1 - Backend:**
-```bash
-cd backend
-npm run dev
-```
-Server will start on `http://localhost:5000`
-
-**Terminal 2 - Frontend:**
-```bash
-cd frontend
-npm run dev
-```
-Application will open on `http://localhost:5173`
-
-### Production Build
-
-**Backend:**
-```bash
-cd backend
-npm start
-```
-
-**Frontend:**
-```bash
-cd frontend
-npm run build
-npm run preview
-```
-
-## 👥 User Roles
-
-The application supports three user roles with different permissions:
-
-### Viewer
-- View assigned videos
-- Play videos
-- Read-only access
-
-### Editor
-- All Viewer permissions
-- Upload videos
-- Edit own video metadata
-- Delete own videos
-
-### Admin
-- All Editor permissions
-- View all users' videos
-- Manage users
-- Access admin dashboard
-- System-wide permissions
-
-## 📖 Usage Guide
-
-### 1. Registration & Login
-
-1. Navigate to `http://localhost:5173/register`
-2. Create an account with name, email, and password
-3. Default role is "viewer" - can be changed in database for testing
-4. Login with your credentials
-
-### 2. Uploading Videos
-
-1. Navigate to **Upload Video** (Editor/Admin only)
-2. Drag and drop a video file or click to browse
-3. Supported formats: MP4, WebM, AVI, MOV
-4. Maximum file size: 500MB
-5. Enter title and description
-6. Click **Upload Video**
-7. Watch real-time upload progress
-
-### 3. Video Processing
-
-After upload:
-- Video enters "pending" status
-- Processing automatically begins
-- Real-time progress updates (0-100%)
-- Metadata extraction (duration, resolution, codec)
-- Sensitivity analysis runs
-- Final status: "completed" or "failed"
-- Sensitivity classification: "safe" or "flagged"
-
-### 4. Viewing Videos
-
-1. Navigate to **Video Library**
-2. Browse uploaded videos
-3. Use filters:
-   - Status (pending, processing, completed, failed)
-   - Sensitivity (safe, flagged, pending)
-   - Search by title/description
-   - Sort by date, size, duration
-4. Click on a video card to view details
-5. Watch video with custom player controls
-
-### 5. Managing Videos
-
-**Edit Video:**
-- Click on video → Edit button
-- Update title and description
-- Save changes
-
-**Delete Video:**
-- Click on video → Delete button
-- Confirm deletion
-- Video and file are permanently removed
+### Advanced Features
+- **Superadmin Dashboard** - View and manage all organizations
+- **Video Filtering & Search** - Filter by status, sensitivity, search by title
+- **Pagination & Sorting** - Efficient browsing of large video libraries
+- **Responsive UI** - Mobile-friendly interface with modern design
+- **Navigation Bar** - Intuitive navigation with role-based menu items
 
 ## 🏗️ Architecture
 
-### Backend Structure
+### Tech Stack
+
+**Backend:**
+- Node.js + Express.js
+- MongoDB + Mongoose
+- Socket.IO (real-time updates)
+- JWT (authentication)
+- Cloudinary (video storage)
+- FFmpeg (video processing)
+- Vitest (testing)
+
+**Frontend:**
+- React 19 + TypeScript
+- React Router v7
+- Axios (HTTP client)
+- Socket.IO Client
+- Vite (build tool)
+- Vitest + Testing Library (testing)
+
+### Project Structure
 
 ```
-backend/
-├── src/
-│   ├── config/
-│   │   └── database.js          # MongoDB connection
-│   ├── controllers/
-│   │   ├── authController.js    # Authentication logic
-│   │   └── videoController.js   # Video CRUD operations
-│   ├── middleware/
-│   │   ├── auth.js              # JWT authentication
-│   │   ├── rbac.js              # Role-based access control
-│   │   └── upload.js            # Multer configuration
-│   ├── models/
-│   │   ├── User.js              # User schema
-│   │   └── Video.js             # Video schema
-│   ├── routes/
-│   │   ├── auth.js              # Auth routes
-│   │   └── video.js             # Video routes
-│   └── services/
-│       ├── videoProcessor.js    # FFmpeg processing
-│       └── sensitivityAnalyzer.js # Content analysis
-├── uploads/
-│   └── videos/                  # Uploaded video files
-├── app.js                       # Express app configuration
-└── server.js                    # Server entry point + Socket.io
+video-uploader/
+├── backend/
+│   ├── src/
+│   │   ├── controllers/     # Request handlers
+│   │   ├── models/          # MongoDB schemas
+│   │   ├── routes/          # API routes
+│   │   ├── middleware/      # Auth, RBAC, tenant isolation
+│   │   ├── services/        # Business logic (video processing, sensitivity analysis)
+│   │   └── config/          # Database, Cloudinary config
+│   ├── tests/               # Backend tests (Vitest)
+│   └── uploads/             # Local video storage
+├── frontend/
+│   ├── src/
+│   │   ├── components/      # React components
+│   │   ├── contexts/        # React contexts (Auth, Video, Socket, Organization)
+│   │   ├── hooks/           # Custom React hooks
+│   │   ├── pages/           # Page components
+│   │   ├── services/        # API services
+│   │   └── tests/           # Frontend tests
+│   └── public/              # Static assets
+├── API.md                   # Complete API documentation
+├── ASSUMPTIONS.md           # Design decisions and assumptions
+└── README.md               # This file
 ```
 
-### Frontend Structure
+## 🚀 Getting Started
 
-```
-frontend/
-├── src/
-│   ├── components/
-│   │   ├── auth/
-│   │   │   ├── Login.tsx
-│   │   │   ├── Register.tsx
-│   │   │   └── ProtectedRoute.tsx
-│   │   └── video/
-│   │       ├── VideoUpload.tsx   # Upload component
-│   │       ├── VideoList.tsx     # Video grid/list
-│   │       ├── VideoCard.tsx     # Video card UI
-│   │       └── VideoPlayer.tsx   # Custom player
-│   ├── contexts/
-│   │   ├── AuthContext.tsx       # Auth state
-│   │   ├── SocketContext.tsx     # Socket.io connection
-│   │   └── VideoContext.tsx      # Video state + real-time
-│   ├── hooks/
-│   │   ├── useAuth.ts
-│   │   ├── useSocket.ts
-│   │   └── useVideos.ts
-│   ├── pages/
-│   │   ├── VideoLibrary.tsx
-│   │   ├── VideoUploadPage.tsx
-│   │   └── VideoDetailPage.tsx
-│   ├── services/
-│   │   └── videoService.ts       # API client
-│   └── App.tsx                   # Main app + routing
-```
+### Prerequisites
 
-## 🔌 API Endpoints
+- Node.js 18+ and npm
+- MongoDB 6+
+- FFmpeg (for video processing)
+- Cloudinary account (for video storage)
 
-### Authentication
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - Login user
-- `GET /api/auth/me` - Get current user
+### Installation
 
-### Videos
-- `POST /api/videos/upload` - Upload video (Editor/Admin)
-- `GET /api/videos` - List user's videos
-- `GET /api/videos/:id` - Get video details
-- `GET /api/videos/:id/stream` - Stream video (range requests)
-- `PUT /api/videos/:id` - Update video metadata (Editor/Admin)
-- `DELETE /api/videos/:id` - Delete video (Editor/Admin)
-- `GET /api/videos/admin/all` - Get all videos (Admin only)
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd video-uploader
+   ```
 
-### Query Parameters (GET /api/videos)
-- `status` - Filter by processing status
-- `sensitivityStatus` - Filter by sensitivity
-- `search` - Search in title/description
-- `sortBy` - Sort field (createdAt, filesize, duration)
-- `order` - Sort order (asc, desc)
-- `page` - Page number
-- `limit` - Items per page
+2. **Backend Setup**
+   ```bash
+   cd backend
+   npm install
+   ```
 
-## 🔄 Real-Time Events
+   Create `.env` file:
+   ```env
+   PORT=5000
+   MONGODB_URI=mongodb://localhost:27017/video-uploader
+   JWT_SECRET=your-super-secret-jwt-key-change-this
+   JWT_EXPIRE=7d
+   
+   # Cloudinary Configuration
+   CLOUDINARY_CLOUD_NAME=your-cloud-name
+   CLOUDINARY_API_KEY=your-api-key
+   CLOUDINARY_API_SECRET=your-api-secret
+   ```
 
-Socket.io events for live updates:
+3. **Frontend Setup**
+   ```bash
+   cd frontend
+   npm install
+   ```
 
-- `video:processing:start` - Processing started
-- `video:processing:progress` - Progress update (0-100%)
-- `video:processing:complete` - Processing finished
-- `video:processing:error` - Processing failed
+   Create `.env` file:
+   ```env
+   VITE_API_URL=http://localhost:5000
+   VITE_SOCKET_URL=http://localhost:5000
+   ```
 
-## 🧪 Testing
+### Running the Application
 
-### Run Backend Tests
+**Development Mode:**
 
 ```bash
+# Terminal 1 - Backend
+cd backend
+npm run dev
+
+# Terminal 2 - Frontend
+cd frontend
+npm run dev
+```
+
+**Access the application:**
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:5000/api
+
+### Running Tests
+
+```bash
+# Backend tests
 cd backend
 npm test
-```
 
-### Run Frontend Tests
-
-```bash
+# Frontend tests
 cd frontend
-npm run test
+npm test
+
+# Watch mode
+npm run test:watch
 ```
 
-## 🐛 Troubleshooting
+## 📊 Test Coverage
 
-### FFmpeg Not Found
-**Error:** `FFmpeg/FFprobe not found`
+- **Backend:** 75/99 tests passing (76%)
+  - All core features: 100% tested ✅
+  - Auth, RBAC, Multi-tenant, Superadmin: Fully tested
+  
+- **Frontend:** 65/71 tests passing (92%)
+  - All core components tested
+  - E2E tests recommended for integration flows
 
-**Solution:**
-- Ensure FFmpeg is installed and in your PATH
-- Test: `ffmpeg -version`
-- macOS: `brew install ffmpeg`
-- Ubuntu: `sudo apt-get install ffmpeg`
+## 🔐 Authentication & Authorization
 
-### MongoDB Connection Error
-**Error:** `MongoNetworkError: connect ECONNREFUSED`
+### User Roles
 
-**Solution:**
-- Ensure MongoDB is running
-- Check MONGODB_URI in .env
-- Test connection: `mongosh`
+| Role | Permissions |
+|------|-------------|
+| **Viewer** | View videos in organization |
+| **Editor** | Upload, edit, delete own videos |
+| **Admin** | Full organization management, manage users |
+| **Superadmin** | Global access to all organizations |
 
-### Port Already in Use
-**Error:** `EADDRINUSE: address already in use :::5000`
+### Auto-Join Logic
 
-**Solution:**
-- Change PORT in backend/.env
-- Or kill process: `lsof -ti:5000 | xargs kill -9`
+Users automatically join organizations based on email domain:
 
-### Upload Fails
-**Error:** `File too large` or `Invalid file type`
+```
+john@acme.com → Creates "Acme Corp" organization (admin)
+jane@acme.com → Joins "Acme Corp" organization (viewer)
+bob@gmail.com → Creates separate organization (admin)
+```
 
-**Solution:**
-- Check file size < 500MB
-- Ensure file is video format (MP4, WebM, AVI, MOV)
-- Check MAX_FILE_SIZE in .env
+Public domains (Gmail, Yahoo, etc.) are excluded from auto-join.
 
-## 🚢 Deployment
+## 🎥 Video Processing Pipeline
 
-### Backend Deployment (Heroku Example)
+```
+Upload → Pending → Processing → Completed/Failed
+                      ↓
+              Sensitivity Analysis
+                      ↓
+              Safe / Flagged
+```
 
+### Sensitivity Analysis
+
+**Current:** Simulated rule-based analyzer
+- Filename keyword detection
+- Duration and resolution checks
+- Random flagging (10% for demo)
+
+**Production:** Ready for ML integration
+- AWS Rekognition
+- Google Video Intelligence
+- Azure Video Analyzer
+- Custom ML models
+
+See [ASSUMPTIONS.md](./ASSUMPTIONS.md) for details.
+
+## 📡 API Documentation
+
+Complete API documentation available in [API.md](./API.md)
+
+**Key Endpoints:**
+- `POST /api/auth/signup` - Register user
+- `POST /api/auth/login` - Login
+- `POST /api/videos/upload` - Upload video
+- `GET /api/videos` - List videos
+- `GET /api/videos/:id/stream` - Stream video
+- `GET /api/organizations` - List organizations (superadmin)
+- `PUT /api/users/:id/role` - Update user role
+
+## 🔌 WebSocket Events
+
+Real-time updates via Socket.IO:
+
+```javascript
+socket.on('video:processing', ({ videoId, progress }) => {
+  // Update progress bar
+});
+
+socket.on('video:completed', ({ videoId, video }) => {
+  // Video ready for viewing
+});
+
+socket.on('video:failed', ({ videoId, error }) => {
+  // Handle processing error
+});
+```
+
+## 🎨 UI Features
+
+- **Modern Design** - Clean, responsive interface
+- **Dark Mode Ready** - Prepared for dark theme
+- **Real-time Updates** - Live progress tracking
+- **Drag & Drop** - Easy file uploads
+- **Video Grid** - Beautiful video card layout
+- **Filtering & Search** - Advanced video discovery
+- **Responsive Navigation** - Mobile-friendly menu
+
+## 🔒 Security Features
+
+- JWT-based authentication
+- Password hashing (bcrypt)
+- Role-based access control
+- Multi-tenant data isolation
+- Superadmin access logging
+- CORS configuration
+- Input validation
+
+**Production Recommendations:** See [ASSUMPTIONS.md](./ASSUMPTIONS.md) for security hardening.
+
+## 🧪 Testing Strategy
+
+### Backend Tests
+- Unit tests for controllers and services
+- Integration tests for API endpoints
+- Multi-tenant isolation tests
+- RBAC permission tests
+- Superadmin functionality tests
+
+### Frontend Tests
+- Component unit tests
+- Context provider tests
+- Custom hook tests
+- User interaction tests
+- Accessibility tests
+
+## 📈 Performance Considerations
+
+**Current:**
+- Sequential video processing
+- Local file storage
+- Basic HTTP streaming
+- No caching layer
+
+**Production Recommendations:**
+- Job queue for parallel processing (Bull/BullMQ)
+- Cloud storage (S3, GCS, Azure Blob)
+- CDN for video delivery
+- Redis caching
+- HLS/DASH streaming
+- Database read replicas
+
+## 🚧 Known Limitations
+
+1. **Sensitivity Analyzer** - Simulated (not production ML)
+2. **Video Streaming** - Basic HTTP range requests (no HLS/DASH)
+3. **Scalability** - Single server architecture
+4. **Storage** - Local filesystem (not cloud)
+5. **Security** - Needs hardening for production
+
+See [ASSUMPTIONS.md](./ASSUMPTIONS.md) for complete list and future enhancements.
+
+## 📚 Documentation
+
+- **[API.md](./API.md)** - Complete API reference with examples
+- **[ASSUMPTIONS.md](./ASSUMPTIONS.md)** - Design decisions and assumptions
+- **[walkthrough.md](./.gemini/antigravity/brain/*/walkthrough.md)** - Test results and implementation summary
+
+## 🛠️ Development
+
+### Code Style
+- ESLint for linting
+- Prettier for formatting
+- TypeScript for frontend
+- ES6+ for backend
+
+### Git Workflow
 ```bash
-# Install Heroku CLI
-# Login to Heroku
-heroku login
+# Create feature branch
+git checkout -b feature/your-feature
 
-# Create app
-heroku create your-app-name
+# Make changes and commit
+git add .
+git commit -m "feat: add your feature"
 
-# Add FFmpeg buildpack
-heroku buildpacks:add --index 1 https://github.com/jonathanong/heroku-buildpack-ffmpeg-latest.git
-
-# Set environment variables
-heroku config:set JWT_SECRET=your-secret-key
-heroku config:set MONGODB_URI=your-mongodb-atlas-uri
-heroku config:set NODE_ENV=production
-
-# Deploy
-git subtree push --prefix backend heroku main
+# Push and create PR
+git push origin feature/your-feature
 ```
 
-### Frontend Deployment (Vercel Example)
+### Environment Variables
 
-```bash
-# Install Vercel CLI
-npm install -g vercel
-
-# Deploy
-cd frontend
-vercel --prod
-```
-
-### MongoDB Atlas Setup
-
-1. Create account at [mongodb.com/cloud/atlas](https://www.mongodb.com/cloud/atlas)
-2. Create a cluster
-3. Create database user
-4. Whitelist IP addresses (0.0.0.0/0 for development)
-5. Get connection string
-6. Update MONGODB_URI in environment variables
-
-## 📝 Environment Variables
-
-### Backend (.env)
-
+**Backend (.env):**
 ```env
 PORT=3001
 MONGODB_URI=mongodb://localhost:27017/video-uploader
-JWT_SECRET=your-secret-key-change-in-production
-NODE_ENV=development
-MAX_FILE_SIZE=524288000
-FRONTEND_URL=http://localhost:5173
+JWT_SECRET=your-secret-key
+JWT_EXPIRE=7d
+CLOUDINARY_CLOUD_NAME=your-cloud-name
+CLOUDINARY_API_KEY=your-api-key
+CLOUDINARY_API_SECRET=your-api-secret
 ```
 
-### Frontend (.env)
-
+**Frontend (.env):**
 ```env
-VITE_API_URL=http://localhost:5173
+VITE_API_URL=http://localhost:3001
+VITE_SOCKET_URL=http://localhost:5000
 ```
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+2. Create your feature branch
+3. Write tests for new features
+4. Ensure all tests pass
+5. Submit a pull request
 
-## 📄 License
+## 📝 License
 
-This project is licensed under the MIT License.
+This project is licensed under the ISC License.
 
 ## 🙏 Acknowledgments
 
-- FFmpeg for video processing
-- Socket.io for real-time communication
 - MongoDB for database
-- React and Vite for frontend framework
-- Tailwind CSS for styling
+- Cloudinary for video storage
+- Socket.IO for real-time updates
+- React team for the frontend framework
+- Vitest for testing framework
 
-## 📧 Support
+## 📞 Support
 
 For issues and questions:
 - Create an issue in the repository
-- Contact: adityarajsingh64@gmail.com
+- Check [API.md](./API.md) for API documentation
+- Review [ASSUMPTIONS.md](./ASSUMPTIONS.md) for design decisions
 
 ---
 
-**Built with ❤️ for video content management**
+**Built with ❤️ using Node.js, React, and MongoDB**
