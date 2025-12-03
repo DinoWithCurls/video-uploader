@@ -3,6 +3,7 @@ import { authAPI } from "../services/api";
 import logger from "../utils/logger";
 
 export type User = {
+  _id?: string | number;
   id?: string | number;
   name?: string;
   email?: string;
