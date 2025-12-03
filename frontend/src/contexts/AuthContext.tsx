@@ -33,32 +33,38 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const checkAuth = async () => {
+    console.log('[AuthContext.checkAuth] Checking authentication');
     const storedToken = localStorage.getItem("token");
     if (storedToken) {
       try {
         const response = await authAPI.getCurrentUser();
         setUser(response.data.user);
         setToken(storedToken);
+        console.log('[AuthContext.checkAuth] User authenticated:', { userId: response.data.user.id, role: response.data.user.role });
       } catch (err) {
-        console.error(err);
+        console.error('[AuthContext.checkAuth] Error:', err);
         localStorage.removeItem("token");
         setToken(null);
       }
+    } else {
+      console.log('[AuthContext.checkAuth] No token found');
     }
     setLoading(false);
   };
 
   const register = async (userData: any) => {
     try {
+      console.log('[AuthContext.register] Entry:', { email: userData.email, name: userData.name });
       setError(null);
       const response = await authAPI.register(userData);
       const { token: newToken, user } = response.data;
       localStorage.setItem("token", newToken);
       setToken(newToken);
       setUser(user);
+      console.log('[AuthContext.register] Success:', { userId: user.id, role: user.role });
       return { success: true };
     } catch (err: any) {
-      console.error(err);
+      console.error('[AuthContext.register] Error:', err);
       const message = err.response?.data?.message || "Registration failed";
       setError(message);
       return { success: false, error: message };
@@ -67,14 +73,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (credentials: any) => {
     try {
+      console.log('[AuthContext.login] Entry:', { email: credentials.email });
       setError(null);
       const response = await authAPI.login(credentials);
       const { token: newToken, user } = response.data;
       localStorage.setItem("token", newToken);
       setToken(newToken);
       setUser(user);
+      console.log('[AuthContext.login] Success:', { userId: user.id, role: user.role });
       return { success: true };
     } catch (err: any) {
+      console.error('[AuthContext.login] Error:', err);
       const message = err.response?.data?.message || "Login failed";
       setError(message);
       return { success: false, error: message };
@@ -82,9 +91,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const logout = () => {
+    console.log('[AuthContext.logout] Logging out user');
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
+    console.log('[AuthContext.logout] User logged out');
   };
 
   return (

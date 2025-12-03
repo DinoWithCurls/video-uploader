@@ -8,10 +8,11 @@ import Video from "../models/Video.js";
  * @returns {Promise<object>} Video metadata
  */
 export const extractVideoMetadata = (filepath) => {
+  console.log('[VideoProcessor.extractVideoMetadata] Entry:', { filepath });
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filepath, (err, metadata) => {
       if (err) {
-        console.error("FFprobe error:", err);
+        console.error("[VideoProcessor.extractVideoMetadata] FFprobe error:", err);
         return reject(err);
       }
 
@@ -21,6 +22,7 @@ export const extractVideoMetadata = (filepath) => {
         );
 
         if (!videoStream) {
+          console.error('[VideoProcessor.extractVideoMetadata] No video stream found');
           return reject(new Error("No video stream found"));
         }
 
@@ -35,8 +37,10 @@ export const extractVideoMetadata = (filepath) => {
           format: metadata.format.format_name || "unknown",
         };
 
+        console.log('[VideoProcessor.extractVideoMetadata] Success:', result);
         resolve(result);
       } catch (error) {
+        console.error('[VideoProcessor.extractVideoMetadata] Error:', error);
         reject(error);
       }
     });
@@ -52,6 +56,7 @@ export const extractVideoMetadata = (filepath) => {
  */
 const updateProgress = async (videoId, progress, io, userId) => {
   try {
+    console.log('[VideoProcessor.updateProgress]', { videoId, progress, userId });
     await Video.findByIdAndUpdate(videoId, {
       processingProgress: progress,
     });
@@ -64,7 +69,7 @@ const updateProgress = async (videoId, progress, io, userId) => {
       });
     }
   } catch (error) {
-    console.error("Error updating progress:", error);
+    console.error("[VideoProcessor.updateProgress] Error:", error);
   }
 };
 
@@ -74,16 +79,19 @@ const updateProgress = async (videoId, progress, io, userId) => {
  * @param {object} io - Socket.io instance (optional)
  */
 export const processVideo = async (videoId, io = null) => {
+  console.log('[VideoProcessor.processVideo] Entry:', { videoId });
   let video;
 
   try {
     // Fetch video record
     video = await Video.findById(videoId);
     if (!video) {
+      console.error('[VideoProcessor.processVideo] Video not found:', videoId);
       throw new Error("Video not found");
     }
 
     const userId = video.uploadedBy.toString();
+    console.log('[VideoProcessor.processVideo] Starting processing for user:', userId);
 
     // Update status to processing
     video.status = "processing";
@@ -98,6 +106,7 @@ export const processVideo = async (videoId, io = null) => {
     }
 
     // Step 1: Extract metadata (25% progress)
+    console.log('[VideoProcessor.processVideo] Step 1: Extracting metadata');
     await updateProgress(videoId, 10, io, userId);
     const metadata = await extractVideoMetadata(video.filepath);
 
@@ -110,10 +119,12 @@ export const processVideo = async (videoId, io = null) => {
     await updateProgress(videoId, 25, io, userId);
 
     // Step 2: Simulate processing delay (50% progress)
+    console.log('[VideoProcessor.processVideo] Step 2: Processing video');
     await new Promise((resolve) => setTimeout(resolve, 2000));
     await updateProgress(videoId, 50, io, userId);
 
     // Step 3: Run sensitivity analysis (75% progress)
+    console.log('[VideoProcessor.processVideo] Step 3: Running sensitivity analysis');
     await updateProgress(videoId, 60, io, userId);
     const sensitivityResult = await analyzeSensitivity(
       video.filepath,
@@ -130,6 +141,7 @@ export const processVideo = async (videoId, io = null) => {
     await updateProgress(videoId, 75, io, userId);
 
     // Step 4: Finalize (100% progress)
+    console.log('[VideoProcessor.processVideo] Step 4: Finalizing');
     await new Promise((resolve) => setTimeout(resolve, 1000));
     video.status = "completed";
     video.processingProgress = 100;
@@ -146,9 +158,9 @@ export const processVideo = async (videoId, io = null) => {
       });
     }
 
-    console.log(`Video ${videoId} processed successfully`);
+    console.log(`[VideoProcessor.processVideo] Success: Video ${videoId} processed successfully`);
   } catch (error) {
-    console.error(`Error processing video ${videoId}:`, error);
+    console.error(`[VideoProcessor.processVideo] Error processing video ${videoId}:`, error);
 
     // Update video status to failed
     if (video) {

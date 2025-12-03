@@ -17,12 +17,16 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log('[Login.handleSubmit] Entry:', { email: formData.email });
     setLoading(true);
     const result = await login(formData);
     setLoading(false);
 
     if (result.success) {
+      console.log('[Login.handleSubmit] Login successful, navigating to dashboard');
       navigate("/dashboard");
+    } else {
+      console.log('[Login.handleSubmit] Login failed');
     }
   };
 

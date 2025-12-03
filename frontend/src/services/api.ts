@@ -13,6 +13,7 @@ const api = axios.create({
 // Add token to every request automatically
 api.interceptors.request.use(
   (config) => {
+    console.log('[API.interceptor.request]', { method: config.method, url: config.url });
     const token = localStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
@@ -20,15 +21,21 @@ api.interceptors.request.use(
     return config;
   },
   (error) => {
+    console.error('[API.interceptor.request] Error:', error);
     return Promise.reject(error);
   }
 );
 
 // Handle response errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log('[API.interceptor.response] Success:', { status: response.status, url: response.config.url });
+    return response;
+  },
   (error) => {
+    console.error('[API.interceptor.response] Error:', { status: error.response?.status, url: error.config?.url });
     if (error.response?.status === 401) {
+      console.log('[API.interceptor.response] Unauthorized - redirecting to login');
       localStorage.removeItem("token");
       window.location.href = "/login";
     }

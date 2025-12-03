@@ -75,6 +75,7 @@ export const uploadVideo = async (
   metadata: { title: string; description?: string },
   onProgress?: (progress: number) => void
 ): Promise<{ video: Partial<Video> }> => {
+  console.log('[VideoService.uploadVideo] Entry:', { filename: file.name, size: file.size, title: metadata.title });
   const formData = new FormData();
   formData.append("video", file);
   formData.append("title", metadata.title);
@@ -96,6 +97,7 @@ export const uploadVideo = async (
     },
   });
 
+  console.log('[VideoService.uploadVideo] Success:', { videoId: response.data.video.id });
   return response.data;
 };
 
@@ -105,7 +107,9 @@ export const uploadVideo = async (
 export const getVideos = async (
   filters?: VideoFilters
 ): Promise<VideosResponse> => {
+  console.log('[VideoService.getVideos] Entry:', filters);
   const response = await api.get("/videos", { params: filters });
+  console.log('[VideoService.getVideos] Success:', { count: response.data.videos.length, total: response.data.pagination.total });
   return response.data;
 };
 
@@ -113,7 +117,9 @@ export const getVideos = async (
  * Get a single video by ID
  */
 export const getVideo = async (id: string): Promise<{ video: Video }> => {
+  console.log('[VideoService.getVideo] Entry:', { id });
   const response = await api.get(`/videos/${id}`);
+  console.log('[VideoService.getVideo] Success:', { videoId: response.data.video._id, title: response.data.video.title });
   return response.data;
 };
 
@@ -124,7 +130,9 @@ export const updateVideo = async (
   id: string,
   updates: { title?: string; description?: string }
 ): Promise<{ video: Partial<Video> }> => {
+  console.log('[VideoService.updateVideo] Entry:', { id, updates });
   const response = await api.put(`/videos/${id}`, updates);
+  console.log('[VideoService.updateVideo] Success');
   return response.data;
 };
 
@@ -132,7 +140,9 @@ export const updateVideo = async (
  * Delete a video
  */
 export const deleteVideo = async (id: string): Promise<void> => {
+  console.log('[VideoService.deleteVideo] Entry:', { id });
   await api.delete(`/videos/${id}`);
+  console.log('[VideoService.deleteVideo] Success');
 };
 
 /**
@@ -140,7 +150,9 @@ export const deleteVideo = async (id: string): Promise<void> => {
  */
 export const getStreamUrl = (id: string): string => {
   const token = localStorage.getItem("token");
-  return `${API_URL}/videos/${id}/stream?token=${token}`;
+  const url = `${API_URL}/videos/${id}/stream?token=${token}`;
+  console.log('[VideoService.getStreamUrl]', { id, url });
+  return url;
 };
 
 /**
@@ -149,6 +161,8 @@ export const getStreamUrl = (id: string): string => {
 export const getAllVideosAdmin = async (
   filters?: VideoFilters
 ): Promise<VideosResponse> => {
+  console.log('[VideoService.getAllVideosAdmin] Entry:', filters);
   const response = await api.get("/videos/admin/all", { params: filters });
+  console.log('[VideoService.getAllVideosAdmin] Success:', { count: response.data.videos.length });
   return response.data;
 };
