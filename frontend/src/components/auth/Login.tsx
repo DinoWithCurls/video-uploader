@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
+import logger from "../../utils/logger";
 
 const Login = () => {
   const [formData, setFormData] = useState({
@@ -17,12 +18,16 @@ const Login = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    logger.log('[Login.handleSubmit] Entry:', { email: formData.email });
     setLoading(true);
     const result = await login(formData);
     setLoading(false);
 
     if (result.success) {
+      logger.log('[Login.handleSubmit] Login successful, navigating to dashboard');
       navigate("/dashboard");
+    } else {
+      logger.log('[Login.handleSubmit] Login failed');
     }
   };
 

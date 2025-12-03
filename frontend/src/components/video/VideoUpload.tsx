@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useVideos } from "../../hooks/useVideos";
+import logger from "../../utils/logger";
 
 const VideoUpload: React.FC = () => {
   const { uploadVideo } = useVideos();
@@ -34,9 +35,11 @@ const VideoUpload: React.FC = () => {
   };
 
   const handleFileSelect = (file: File) => {
+    logger.log('[VideoUpload.handleFileSelect] Entry:', { filename: file.name, size: file.size, type: file.type });
     // Validate file type
     const validTypes = ["video/mp4", "video/webm", "video/avi", "video/quicktime"];
     if (!validTypes.includes(file.type)) {
+      logger.log('[VideoUpload.handleFileSelect] Invalid file type:', file.type);
       setError("Invalid file type. Please upload a video file (MP4, WebM, AVI, MOV)");
       return;
     }
@@ -44,10 +47,12 @@ const VideoUpload: React.FC = () => {
     // Validate file size (500MB)
     const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
+      logger.log('[VideoUpload.handleFileSelect] File too large:', file.size);
       setError("File too large. Maximum size is 500MB");
       return;
     }
 
+    logger.log('[VideoUpload.handleFileSelect] File selected successfully');
     setSelectedFile(file);
     setError(null);
   };
@@ -60,13 +65,16 @@ const VideoUpload: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    logger.log('[VideoUpload.handleSubmit] Entry:', { title, hasFile: !!selectedFile });
 
     if (!selectedFile) {
+      logger.log('[VideoUpload.handleSubmit] No file selected');
       setError("Please select a video file");
       return;
     }
 
     if (!title.trim()) {
+      logger.log('[VideoUpload.handleSubmit] No title provided');
       setError("Please enter a title");
       return;
     }
@@ -85,6 +93,7 @@ const VideoUpload: React.FC = () => {
         }
       );
 
+      logger.log('[VideoUpload.handleSubmit] Upload successful');
       setSuccess(true);
       setTitle("");
       setDescription("");
@@ -94,6 +103,7 @@ const VideoUpload: React.FC = () => {
       // Reset success message after 3 seconds
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
+      logger.error('[VideoUpload.handleSubmit] Upload error:', err);
       setError(err.message || "Error uploading video");
     } finally {
       setUploading(false);
