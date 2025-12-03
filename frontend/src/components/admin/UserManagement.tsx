@@ -4,8 +4,13 @@ import type { User } from "../../contexts/AuthContext";
 import { useAuth } from "../../hooks/useAuth";
 import logger from "../../utils/logger";
 
+// Extend User to handle backend response with _id
+interface UserWithId extends User {
+  _id?: string;
+}
+
 const UserManagement: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<UserWithId[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user: currentUser } = useAuth();
@@ -36,11 +41,12 @@ const UserManagement: React.FC = () => {
         return;
       }
       
-      logger.log('[UserManagement.handleRoleChange] Entry:', { userId, newRole });
-      await updateUserRole(String(userId), newRole as "admin" | "editor" | "viewer");
+      const validRole = newRole as "admin" | "editor" | "viewer";
+      logger.log('[UserManagement.handleRoleChange] Entry:', { userId, newRole: validRole });
+      await updateUserRole(String(userId), validRole);
       // Update local state
       setUsers(
-        users.map((u) => (u._id === userId || u.id === userId ? { ...u, role: newRole } : u))
+        users.map((u) => (u._id === userId || u.id === userId ? { ...u, role: validRole } : u))
       );
       logger.log('[UserManagement.handleRoleChange] Success');
     } catch (err: any) {
@@ -107,7 +113,7 @@ const UserManagement: React.FC = () => {
                       onChange={(e) =>
                         handleRoleChange(userId, e.target.value)
                       }
-                      disabled={userId === currentUser?.id || userId === currentUser?._id}
+                      disabled={userId === currentUser?.id}
                       className="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm disabled:opacity-50"
                     >
                       <option value="viewer">Viewer</option>

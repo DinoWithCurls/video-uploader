@@ -2,7 +2,7 @@ import { createContext, useState, useEffect, type ReactNode } from "react";
 import { authAPI } from "../services/api";
 import logger from "../utils/logger";
 
-interface User {
+export interface User {
   id: string;
   name: string;
   email: string;
