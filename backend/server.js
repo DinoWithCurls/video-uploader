@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import { createServer } from "http";
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import { corsOptions } from "./src/config/cors.js";
 
 dotenv.config();
 
@@ -15,10 +16,7 @@ const httpServer = createServer(app);
 
 // Initialize Socket.io
 const io = new Server(httpServer, {
-  cors: {
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    credentials: true,
-  },
+  cors: corsOptions,
 });
 
 // Socket.io authentication middleware

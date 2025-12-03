@@ -3,16 +3,12 @@ import cors from "cors";
 import authRoutes from "./src/routes/auth.js";
 import videoRoutes from "./src/routes/video.js";
 import { auth } from "./src/middleware/auth.js";
+import { corsOptions } from "./src/config/cors.js";
 
 const app = express();
 
-// CORS middleware - simple configuration
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL || "http://localhost:5173",
-    credentials: true,
-  })
-);
+// CORS middleware
+app.use(cors(corsOptions));
 
 app.use(express.json());
 
