@@ -3,9 +3,9 @@ import type { Video, VideoFilters } from "../services/videoService";
 import logger from "../utils/logger";
 import {
   getVideos as fetchVideosAPI,
-  uploadVideo as uploadVideoAPI,
   deleteVideo as deleteVideoAPI,
   updateVideo as updateVideoAPI,
+  uploadVideo as uploadVideoAPI,
 } from "../services/videoService";
 import { useSocket } from "../hooks/useSocket";
 

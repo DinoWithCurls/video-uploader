@@ -11,7 +11,6 @@ import {
 import { auth } from "../middleware/auth.js";
 import {
   requireRole,
-  requireOwnershipOrAdmin,
   canModify,
   requireOrganizationAccess,
 } from "../middleware/rbac.js";

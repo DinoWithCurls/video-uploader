@@ -59,14 +59,6 @@ const Navbar = () => {
                     </Link>
                   </>
                 )}
-                {user?.role === "superadmin" && (
-                  <Link
-                    to="/superadmin"
-                    className={`px-3 py-2 rounded-md text-sm font-medium ${isActive("/superadmin")}`}
-                  >
-                    Super Admin
-                  </Link>
-                )}
               </div>
             </div>
           </div>

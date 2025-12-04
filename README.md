@@ -13,15 +13,13 @@ A full-stack multi-tenant video upload, processing, and streaming application wi
 
 ### User Management
 - **Role-Based Access Control (RBAC)**
-  - **Viewer** - View videos only
-  - **Editor** - Upload, edit, and delete own videos
-  - **Admin** - Full organization management
-  - **Superadmin** - Global platform access
+  - **Viewer** - Can view videos
+  - **Editor** - Can upload and manage own videos
+  - **Admin** - Full organization control
 - **Auto-join by Email Domain** - Automatic organization assignment based on email domain
 - **Organization Management** - Create and manage organizations with settings
 
 ### Advanced Features
-- **Superadmin Dashboard** - View and manage all organizations
 - **Video Filtering & Search** - Filter by status, sensitivity, search by title
 - **Pagination & Sorting** - Efficient browsing of large video libraries
 - **Responsive UI** - Mobile-friendly interface with modern design
@@ -161,7 +159,7 @@ npm run test:watch
 
 - **Backend:** 75/99 tests passing (76%)
   - All core features: 100% tested ✅
-  - Auth, RBAC, Multi-tenant, Superadmin: Fully tested
+  - Auth, RBAC, Multi-tenant: Fully tested
   
 - **Frontend:** 65/71 tests passing (92%)
   - All core components tested
@@ -173,10 +171,9 @@ npm run test:watch
 
 | Role | Permissions |
 |------|-------------|
-| **Viewer** | View videos in organization |
-| **Editor** | Upload, edit, delete own videos |
-| **Admin** | Full organization management, manage users |
-| **Superadmin** | Global access to all organizations |
+| **Admin** | Full control within their organization |
+| **Editor** | Can upload and manage their own videos |
+| **Viewer** | Read-only access to organization videos |
 
 ### Auto-Join Logic
 
@@ -225,7 +222,7 @@ Complete API documentation available in [API.md](./API.md)
 - `POST /api/videos/upload` - Upload video
 - `GET /api/videos` - List videos
 - `GET /api/videos/:id/stream` - Stream video
-- `GET /api/organizations` - List organizations (superadmin)
+- `GET /api/organizations` - List organizations (admin)
 - `PUT /api/users/:id/role` - Update user role
 
 ## 🔌 WebSocket Events
@@ -262,7 +259,7 @@ socket.on('video:failed', ({ videoId, error }) => {
 - Password hashing (bcrypt)
 - Role-based access control
 - Multi-tenant data isolation
-- Superadmin access logging
+
 - CORS configuration
 - Input validation
 
@@ -275,7 +272,7 @@ socket.on('video:failed', ({ videoId, error }) => {
 - Integration tests for API endpoints
 - Multi-tenant isolation tests
 - RBAC permission tests
-- Superadmin functionality tests
+
 
 ### Frontend Tests
 - Component unit tests

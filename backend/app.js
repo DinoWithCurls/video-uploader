@@ -12,7 +12,9 @@ const app = express();
 // CORS middleware
 app.use(cors(corsOptions));
 
-app.use(express.json());
+// Body parsers with increased limits for chunked uploads
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -29,7 +31,7 @@ app.get("/api/protected", auth, (req, res) => {
 });
 
 // Error handling
-app.use((err, req, res, next) => {
+app.use((err, req, res, _next) => {
   console.error("Error:", err);
 
   // Handle Multer errors
