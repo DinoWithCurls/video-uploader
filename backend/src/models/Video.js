@@ -101,6 +101,10 @@ const videoSchema = new mongoose.Schema({
 videoSchema.index({ organizationId: 1, uploadedBy: 1, createdAt: -1 });
 videoSchema.index({ organizationId: 1, status: 1 });
 videoSchema.index({ organizationId: 1, sensitivityStatus: 1 });
+// Indexes for range filtering
+videoSchema.index({ organizationId: 1, createdAt: -1 });
+videoSchema.index({ organizationId: 1, filesize: 1 });
+videoSchema.index({ organizationId: 1, duration: 1 });
 
 // Update the updatedAt timestamp before saving
 videoSchema.pre("save", function () {

@@ -52,6 +52,12 @@ export interface VideoFilters {
   status?: string;
   sensitivityStatus?: string;
   search?: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  filesizeMin?: number | null;
+  filesizeMax?: number | null;
+  durationMin?: number | null;
+  durationMax?: number | null;
   sortBy?: string;
   order?: "asc" | "desc";
   page?: number;

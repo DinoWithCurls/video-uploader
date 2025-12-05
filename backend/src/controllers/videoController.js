@@ -90,6 +90,12 @@ export const getVideos = async (req, res) => {
       status,
       sensitivityStatus,
       search,
+      dateFrom,
+      dateTo,
+      filesizeMin,
+      filesizeMax,
+      durationMin,
+      durationMax,
       sortBy = "createdAt",
       order = "desc",
       page = 1,
@@ -102,7 +108,8 @@ export const getVideos = async (req, res) => {
     };
 
     // All users can see all videos in their organization
-    // Admins, editors, and viewers all have access to view organization videos₹
+    // Admins, editors, and viewers all have access to view organization videos
+    
     // Apply filters
     if (status) {
       query.status = status;
@@ -117,6 +124,43 @@ export const getVideos = async (req, res) => {
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
       ];
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        // dateFrom is already a Date object from Joi validation
+        query.createdAt.$gte = dateFrom instanceof Date ? dateFrom : new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Include the entire day by adding 23:59:59
+        const endDate = dateTo instanceof Date ? new Date(dateTo) : new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = endDate;
+      }
+    }
+
+    // Filesize range filter (in bytes) - already numbers from Joi
+    if (filesizeMin || filesizeMax) {
+      query.filesize = {};
+      if (filesizeMin) {
+        query.filesize.$gte = filesizeMin;
+      }
+      if (filesizeMax) {
+        query.filesize.$lte = filesizeMax;
+      }
+    }
+
+    // Duration range filter (in seconds) - already numbers from Joi
+    if (durationMin || durationMax) {
+      query.duration = {};
+      if (durationMin) {
+        query.duration.$gte = durationMin;
+      }
+      if (durationMax) {
+        query.duration.$lte = durationMax;
+      }
     }
 
     // Build sort

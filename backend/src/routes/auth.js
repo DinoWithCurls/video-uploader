@@ -1,11 +1,18 @@
 import express from "express";
 import { register, login, getCurrentUser } from "../controllers/authController.js";
 import { auth } from "../middleware/auth.js";
+import { validateBody } from "../middleware/validation.js";
+import{ registerSchema, loginSchema } from "../validation/schemas.js";
 
 const router = express.Router();
 
-router.post("/signup", register);
-router.post("/login", login);
+// Register - with validation (keeping /signup path for backward compatibility)
+router.post("/signup", validateBody(registerSchema), register);
+
+// Login - with validation
+router.post("/login", validateBody(loginSchema), login);
+
+// Get current user profile (requires authentication)
 router.get("/me", auth, getCurrentUser);
 
 export default router;

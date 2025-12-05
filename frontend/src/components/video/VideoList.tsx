@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { useVideos } from "../../hooks/useVideos";
 import { useAuth } from "../../hooks/useAuth";
 import VideoCard from "./VideoCard";
+import VideoFilters from "./VideoFilters";
+import type { AdvancedFilters } from "./VideoFilters";
 import Modal from "../common/Modal";
 import Toast from "../common/Toast";
 import VideoCardSkeleton from "../common/VideoCardSkeleton";
@@ -11,12 +13,18 @@ const VideoList: React.FC = () => {
     useVideos();
   const { user } = useAuth();
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<AdvancedFilters>({
     status: "",
     sensitivityStatus: "",
     search: "",
+    dateFrom: null,
+    dateTo: null,
+    filesizeMin: null,
+    filesizeMax: null,
+    durationMin: null,
+    durationMax: null,
     sortBy: "createdAt",
-    order: "desc" as "asc" | "desc",
+    order: "desc",
     page: 1,
     limit: 12,
   });
@@ -38,8 +46,26 @@ const VideoList: React.FC = () => {
     fetchVideos(filters);
   }, [filters, fetchVideos]);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: keyof AdvancedFilters, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+  };
+
+  const handleClearAll = () => {
+    setFilters({
+      status: "",
+      sensitivityStatus: "",
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      filesizeMin: null,
+      filesizeMax: null,
+      durationMin: null,
+      durationMax: null,
+      sortBy: "createdAt",
+      order: "desc",
+      page: 1,
+      limit: 12,
+    });
   };
 
   const handleDeleteClick = (id: string, title: string) => {
@@ -71,92 +97,12 @@ const VideoList: React.FC = () => {
         <h2 className="text-2xl font-bold">My Videos</h2>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        {/* Search */}
-        <div>
-          <input
-            type="text"
-            placeholder="Search videos..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Filter Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Status Filter */}
-          <div>
-            <label htmlFor="status-filter" className="block text-sm font-medium mb-1">Status</label>
-            <select
-              id="status-filter"
-              value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All</option>
-              <option value="pending">Pending</option>
-              <option value="uploading">Uploading</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-
-          {/* Sensitivity Filter */}
-          <div>
-            <label htmlFor="sensitivity-filter" className="block text-sm font-medium mb-1">
-              Sensitivity
-            </label>
-            <select
-              id="sensitivity-filter"
-              value={filters.sensitivityStatus}
-              onChange={(e) =>
-                handleFilterChange("sensitivityStatus", e.target.value)
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All</option>
-              <option value="safe">Safe</option>
-              <option value="flagged">Flagged</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label htmlFor="sort-by-filter" className="block text-sm font-medium mb-1">Sort By</label>
-            <select
-              id="sort-by-filter"
-              value={filters.sortBy}
-              onChange={(e) => handleFilterChange("sortBy", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="createdAt">Upload Date</option>
-              <option value="title">Title</option>
-              <option value="filesize">File Size</option>
-              <option value="duration">Duration</option>
-            </select>
-          </div>
-
-          {/* Order */}
-          <div>
-            <label htmlFor="order-filter" className="block text-sm font-medium mb-1">Order</label>
-            <select
-              id="order-filter"
-              value={filters.order}
-              onChange={(e) =>
-                handleFilterChange("order", e.target.value as "asc" | "desc")
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      {/* Advanced Filters */}
+      <VideoFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearAll}
+      />
 
       {/* Error Message */}
       {error && (

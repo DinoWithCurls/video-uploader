@@ -15,6 +15,8 @@ import {
   requireOrganizationAccess,
 } from "../middleware/rbac.js";
 import upload from "../middleware/upload.js";
+import { validateQuery, validateBody, validateParams } from "../middleware/validation.js";
+import { videoFiltersSchema, videoUploadSchema, videoUpdateSchema, objectIdSchema } from "../validation/schemas.js";
 
 const router = express.Router();
 
@@ -26,25 +28,44 @@ router.post(
   "/upload",
   requireRole(["editor", "admin"]),
   upload.single("video"),
+  validateBody(videoUploadSchema),
   uploadVideo
 );
 
-// Get videos (filtered by user, unless admin)
-router.get("/", getVideos);
+// Get all videos with filters (all authenticated users)
+router.get("/", validateQuery(videoFiltersSchema), getVideos);
 
-// Admin: Get all videos from all users
-router.get("/admin/all", requireRole("admin"), getAllVideosAdmin);
+// Admin: Get all videos across all organizations
+router.get(
+  "/admin/all",
+  requireRole(["admin"]),
+  validateQuery(videoFiltersSchema),
+  getAllVideosAdmin
+);
 
-// Get single video (all organization members can view)
-router.get("/:id", requireOrganizationAccess, getVideo);
+// Get single video (all authenticated users)
+router.get("/:id", validateParams(objectIdSchema), getVideo);
 
-// Stream video (all organization members can view)
-router.get("/:id/stream", requireOrganizationAccess, streamVideo);
+// Stream video (all authenticated users)
+router.get("/:id/stream", validateParams(objectIdSchema), streamVideo);
 
-// Update video (must own or be admin, and be editor/admin role)
-router.put("/:id", canModify, updateVideo);
+// Update video metadata (editors and admins only, must be uploader or admin)
+router.put(
+  "/:id",
+  validateParams(objectIdSchema),
+  validateBody(videoUpdateSchema),
+  requireRole(["editor", "admin"]),
+  canModify,
+  updateVideo
+);
 
-// Delete video (must own or be admin, and be editor/admin role)
-router.delete("/:id", canModify, deleteVideo);
+// Delete video (editors and admins only, must be uploader or admin)
+router.delete(
+  "/:id",
+  validateParams(objectIdSchema),
+  requireRole(["editor", "admin"]),
+  canModify,
+  deleteVideo
+);
 
 export default router;
