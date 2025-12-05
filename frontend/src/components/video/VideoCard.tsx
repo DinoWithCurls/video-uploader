@@ -13,6 +13,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
   const getStatusBadge = (status: string) => {
     const badges = {
       pending: "bg-yellow-100 text-yellow-800",
+      uploading: "bg-purple-100 text-purple-800",
       processing: "bg-blue-100 text-blue-800",
       completed: "bg-green-100 text-green-800",
       failed: "bg-red-100 text-red-800",
@@ -117,6 +118,14 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
           </span>
         </div>
 
+        {/* Uploading Indicator */}
+        {video.status === "uploading" && (
+          <div className="flex items-center gap-2 text-sm text-purple-700 bg-purple-50 px-3 py-2 rounded-lg">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-purple-600 border-t-transparent" />
+            <span>Uploading to cloud storage...</span>
+          </div>
+        )}
+
         {/* Processing Progress */}
         {video.status === "processing" && (
           <div className="space-y-1">
@@ -150,14 +159,16 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
         <div className="flex gap-2 pt-2">
           <button
             onClick={() => navigate(`/videos/${video._id}`)}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors"
+            disabled={video.status === "uploading" || video.status === "pending"}
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
           >
-            View
+            {video.status === "uploading" || video.status === "pending" ? "Processing..." : "View"}
           </button>
           {onDelete && (
             <button
               onClick={() => onDelete(video._id)}
-              className="bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors"
+              disabled={video.status === "uploading"}
+              className="bg-red-600 text-white py-2 px-4 rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
             >
               Delete
             </button>

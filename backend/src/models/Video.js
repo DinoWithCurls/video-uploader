@@ -17,12 +17,13 @@ const videoSchema = new mongoose.Schema({
   },
   storedFilename: {
     type: String,
-    required: true,
+    // required: true, // Removed required as it's set after async upload
     unique: true,
+    sparse: true, // Allow multiple null/undefined values
   },
   filepath: {
     type: String,
-    required: true,
+    // required: true, // Removed required as it's set after async upload
   },
   filesize: {
     type: Number,
@@ -63,7 +64,7 @@ const videoSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "processing", "completed", "failed"],
+    enum: ["pending", "uploading", "processing", "completed", "failed"],
     default: "pending",
   },
   processingProgress: {

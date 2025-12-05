@@ -88,7 +88,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
           resolution: { width: 0, height: 0 },
           codec: "",
           uploadedBy: { _id: "", name: "", email: "" },
-          status: "pending",
+          status: (response.video as any).status || "pending",
           processingProgress: 0,
           sensitivityStatus: "pending",
           sensitivityScore: 0,

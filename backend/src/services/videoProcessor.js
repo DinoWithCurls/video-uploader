@@ -91,7 +91,7 @@ export const processVideo = async (videoId, io = null) => {
     }
 
     const userId = video.uploadedBy.toString();
-    console.log('[VideoProcessor.processVideo] Starting processing for user:', userId);
+    console.log('[VideoProcessor.processVideo] Starting processing for user:', userId, 'Filepath:', video.filepath);
 
     // Update status to processing
     video.status = "processing";
@@ -108,6 +108,11 @@ export const processVideo = async (videoId, io = null) => {
     // Step 1: Extract metadata (25% progress)
     console.log('[VideoProcessor.processVideo] Step 1: Extracting metadata');
     await updateProgress(videoId, 10, io, userId);
+    
+    if (!video.filepath) {
+        throw new Error("Video filepath is missing");
+    }
+
     const metadata = await extractVideoMetadata(video.filepath);
 
     // Update video with metadata

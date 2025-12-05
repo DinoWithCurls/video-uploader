@@ -2,6 +2,9 @@ import React, { useState, useEffect } from "react";
 import { useVideos } from "../../hooks/useVideos";
 import { useAuth } from "../../hooks/useAuth";
 import VideoCard from "./VideoCard";
+import Modal from "../common/Modal";
+import Toast from "../common/Toast";
+import VideoCardSkeleton from "../common/VideoCardSkeleton";
 
 const VideoList: React.FC = () => {
   const { videos, loading, error, pagination, fetchVideos, deleteVideo } =
@@ -18,6 +21,19 @@ const VideoList: React.FC = () => {
     limit: 12,
   });
 
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; videoId: string | null; videoTitle: string }>({
+    isOpen: false,
+    videoId: null,
+    videoTitle: "",
+  });
+
+  const [toast, setToast] = useState<{ type: "success" | "error" | "info" | "warning"; message: string } | null>(null);
+
+  const showToast = (type: "success" | "error" | "info" | "warning", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  };
+
   useEffect(() => {
     fetchVideos(filters);
   }, [filters, fetchVideos]);
@@ -26,13 +42,19 @@ const VideoList: React.FC = () => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      try {
-        await deleteVideo(id);
-      } catch (err) {
-        console.error("Error deleting video:", err);
-      }
+  const handleDeleteClick = (id: string, title: string) => {
+    setDeleteModal({ isOpen: true, videoId: id, videoTitle: title });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.videoId) return;
+
+    try {
+      await deleteVideo(deleteModal.videoId);
+      showToast("success", "Video deleted successfully");
+    } catch (err: any) {
+      console.error("Error deleting video:", err);
+      showToast("error", err.message || "Error deleting video");
     }
   };
 
@@ -75,6 +97,7 @@ const VideoList: React.FC = () => {
             >
               <option value="">All</option>
               <option value="pending">Pending</option>
+              <option value="uploading">Uploading</option>
               <option value="processing">Processing</option>
               <option value="completed">Completed</option>
               <option value="failed">Failed</option>
@@ -142,11 +165,12 @@ const VideoList: React.FC = () => {
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading State with Skeletons */}
       {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading videos...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <VideoCardSkeleton key={i} />
+          ))}
         </div>
       )}
 
@@ -157,7 +181,7 @@ const VideoList: React.FC = () => {
             <VideoCard
               key={video._id}
               video={video}
-              onDelete={canDelete ? handleDelete : undefined}
+              onDelete={canDelete ? (id) => handleDeleteClick(id, video.title) : undefined}
             />
           ))}
         </div>
@@ -199,6 +223,27 @@ const VideoList: React.FC = () => {
             Next
           </button>
         </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, videoId: null, videoTitle: "" })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete "${deleteModal.videoTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

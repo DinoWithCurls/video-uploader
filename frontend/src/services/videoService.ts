@@ -39,7 +39,7 @@ export interface Video {
     name: string;
     email: string;
   };
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "uploading" | "processing" | "completed" | "failed";
   processingProgress: number;
   sensitivityStatus: "safe" | "flagged" | "pending";
   sensitivityScore: number;
