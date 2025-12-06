@@ -2,10 +2,10 @@ import multer from "multer";
 import fs from "fs";
 import path from "path";
 
-// Ensure uploads directory exists
-const uploadDir = "uploads/";
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
+// Ensure upload directories exist
+const tempDir = path.join(process.cwd(), "uploads/temp");
+if (!fs.existsSync(tempDir)) {
+  fs.mkdirSync(tempDir, { recursive: true });
 }
 
 // Configure Disk Storage
