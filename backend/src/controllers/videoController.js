@@ -1,6 +1,8 @@
 import Video from "../models/Video.js";
 import { processUpload } from "../services/cloudUploadService.js";
 import cloudinary from "../config/cloudinary.js";
+import * as localStorageService from "../services/localStorageService.js";
+import fs from "fs";
 
 /**
  * Upload a new video
@@ -203,11 +205,15 @@ export const getVideos = async (req, res) => {
 export const getVideo = async (req, res) => {
   try {
     console.log('[VideoController.getVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
-    // Video is already attached by middleware
-    const video = req.video;
+    
+    // Fetch video directly
+    const video = await Video.findById(req.params.id)
+      .populate("uploadedBy", "name email");
 
-    // Populate user info
-    await video.populate("uploadedBy", "name email");
+    if (!video) {
+      console.log('[VideoController.getVideo] Video not found:', req.params.id);
+      return res.status(404).json({ message: "Video not found" });
+    }
 
     // Don't expose file path
     const videoData = video.toObject();
@@ -222,20 +228,67 @@ export const getVideo = async (req, res) => {
 };
 
 /**
- * Stream video (Redirect to Cloudinary)
+ * Stream video (Redirect to Cloudinary or serve local file)
  * GET /api/videos/:id/stream
  */
 export const streamVideo = async (req, res) => {
   try {
     console.log('[VideoController.streamVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
-    const video = req.video;
-    console.log('[VideoController.streamVideo] Redirecting to Cloudinary:', video.filepath);
-    // Redirect to Cloudinary URL
-    // Cloudinary handles range requests and streaming automatically
-    res.redirect(video.filepath);
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+      console.log('[VideoController.streamVideo] Video not found:', req.params.id);
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    // Check if this is a local file or Cloudinary URL
+    if (video.filepath.startsWith('/uploads/')) {
+      console.log('[VideoController.streamVideo] Serving local file:', video.filepath);
+      // Local file - serve it directly
+      const videoPath = localStorageService.getVideoPath(video.storedFilename);
+      
+      if (!fs.existsSync(videoPath)) {
+        console.error('[VideoController.streamVideo] Local video file not found on disk:', videoPath);
+        return res.status(404).json({ message: "Video file not found" });
+      }
+      
+      // Get file stats for range requests
+      const stat = fs.statSync(videoPath);
+      const fileSize = stat.size;
+      const range = req.headers.range;
+
+      if (range) {
+        // Handle range requests for video streaming
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
+        const file = fs.createReadStream(videoPath, { start, end });
+        const head = {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunksize,
+          'Content-Type': video.mimetype || 'video/mp4',
+        };
+        res.writeHead(206, head);
+        file.pipe(res);
+      } else {
+        // No range request - send entire file
+        const head = {
+          'Content-Length': fileSize,
+          'Content-Type': video.mimetype || 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(videoPath).pipe(res);
+      }
+    } else {
+      // Cloudinary URL - redirect
+      console.log('[VideoController.streamVideo] Redirecting to Cloudinary:', video.filepath);
+      res.redirect(video.filepath);
+    }
   } catch (error) {
     console.error("[VideoController.streamVideo] Error:", error);
-    res.status(500).json({ message: "Error streaming video" });
+    res.status(500).json({ message: "Error streaming video", error: error.message });
   }
 };
 
@@ -278,10 +331,38 @@ export const deleteVideo = async (req, res) => {
     console.log('[VideoController.deleteVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
     const video = req.video;
 
-    // Delete from Cloudinary
-    if (video.storedFilename) {
-      console.log('[VideoController.deleteVideo] Deleting from Cloudinary:', video.storedFilename);
-      await cloudinary.uploader.destroy(video.storedFilename, { resource_type: "video" });
+    // Delete from storage (local or Cloudinary)
+    if (video.filepath.startsWith('/uploads/')) {
+      // Local file - delete from filesystem
+      if (video.storedFilename) {
+        console.log('[VideoController.deleteVideo] Deleting local file:', video.storedFilename);
+        try {
+          localStorageService.deleteVideo(video.storedFilename, video._id.toString());
+        } catch (deleteError) {
+          console.error('[VideoController.deleteVideo] Error deleting local file:', deleteError);
+          // Continue with database deletion even if file deletion fails
+        }
+      }
+    } else {
+      // Cloudinary - delete from Cloudinary
+      if (video.storedFilename) {
+        console.log('[VideoController.deleteVideo] Deleting from Cloudinary:', video.storedFilename);
+        try {
+          await cloudinary.uploader.destroy(video.storedFilename, { resource_type: "video" });
+        } catch (cloudinaryError) {
+          console.error('[VideoController.deleteVideo] Error deleting from Cloudinary:', cloudinaryError);
+          // Continue with database deletion even if Cloudinary deletion fails
+        }
+      }
+      
+      // Also delete local thumbnail if it exists (since we always generate local thumbnails now)
+      try {
+        // We pass null for filename since we don't have a local video file to delete here
+        // But we pass videoId to trigger thumbnail deletion
+        localStorageService.deleteVideo(null, video._id.toString());
+      } catch (thumbnailError) {
+        console.error('[VideoController.deleteVideo] Error deleting local thumbnail:', thumbnailError);
+      }
     }
 
     // Delete from database

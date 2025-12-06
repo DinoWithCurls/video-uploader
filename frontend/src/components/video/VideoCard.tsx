@@ -63,9 +63,54 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
 
   return (
     <div className="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow overflow-hidden">
-      {/* Thumbnail Placeholder */}
-      <div className="bg-gradient-to-br from-blue-500 to-purple-600 h-48 flex items-center justify-center">
-        <div className="text-white text-6xl">🎬</div>
+      {/* Thumbnail */}
+      <div className="relative bg-gradient-to-br from-blue-500 to-purple-600 h-48 flex items-center justify-center">
+        {video.thumbnailUrl ? (
+          <img
+            src={video.thumbnailUrl.startsWith('http') 
+              ? video.thumbnailUrl 
+              : `${import.meta.env.VITE_API_URL?.replace('/api', '') || 'http://localhost:3001'}${video.thumbnailUrl}`
+            }
+            alt={video.title}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              // Fallback to placeholder if image fails to load
+              const target = e.currentTarget;
+              target.style.display = 'none';
+              const parent = target.parentElement;
+              if (parent) {
+                const placeholder = parent.querySelector('.thumbnail-placeholder');
+                if (placeholder) {
+                  (placeholder as HTMLElement).style.display = 'flex';
+                }
+              }
+            }}
+          />
+        ) : null}
+        <div className={`thumbnail-placeholder text-white text-6xl ${video.thumbnailUrl ? 'hidden' : 'flex'} items-center justify-center w-full h-full absolute inset-0`}>
+          🎬
+        </div>
+        
+        {/* Flagged Reasons Overlay */}
+        {video.sensitivityStatus === "flagged" &&
+          video.flaggedReasons.length > 0 && (
+            <div className="absolute inset-0 bg-red-900 bg-opacity-95 p-4 overflow-y-auto">
+              <div className="text-white">
+                <div className="flex items-center gap-2 mb-3">
+                  <span className="text-2xl">⚠️</span>
+                  <p className="font-bold text-lg">Flagged Content</p>
+                </div>
+                <ul className="space-y-1 text-sm">
+                  {video.flaggedReasons.map((reason, index) => (
+                    <li key={index} className="flex items-start gap-2">
+                      <span className="text-red-300 mt-1">•</span>
+                      <span>{reason}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
       </div>
 
       {/* Content */}
@@ -86,12 +131,10 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
             <span>Size:</span>
             <span>{formatFileSize(video.filesize)}</span>
           </div>
-          {video.duration > 0 && (
-            <div className="flex justify-between">
-              <span>Duration:</span>
-              <span>{formatDuration(video.duration)}</span>
-            </div>
-          )}
+          <div className="flex justify-between">
+            <span>Duration:</span>
+            <span>{formatDuration(video.duration)}</span>
+          </div>
           <div className="flex justify-between">
             <span>Uploaded:</span>
             <span>{formatDate(video.createdAt)}</span>
@@ -142,18 +185,7 @@ const VideoCard: React.FC<VideoCardProps> = ({ video, onDelete }) => {
           </div>
         )}
 
-        {/* Flagged Reasons */}
-        {video.sensitivityStatus === "flagged" &&
-          video.flaggedReasons.length > 0 && (
-            <div className="text-xs text-red-600 bg-red-50 p-2 rounded">
-              <p className="font-medium">Flagged reasons:</p>
-              <ul className="list-disc list-inside">
-                {video.flaggedReasons.map((reason, index) => (
-                  <li key={index}>{reason}</li>
-                ))}
-              </ul>
-            </div>
-          )}
+
 
         {/* Actions */}
         <div className="flex gap-2 pt-2">

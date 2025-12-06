@@ -100,9 +100,6 @@ const Navbar = () => {
                 <span className="text-gray-300 text-sm hidden sm:block">
                   {user?.name}
                 </span>
-                <span className="px-2 py-1 bg-gray-700 text-gray-300 rounded text-xs">
-                  {user?.role}
-                </span>
               </div>
               <button
                 onClick={logout}

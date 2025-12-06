@@ -162,7 +162,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
         setVideos((prev) =>
           prev.map((v) =>
             v._id === data.videoId
-              ? { ...v, processingProgress: data.progress }
+              ? { ...v, processingProgress: data.progress, ...data } // Merge any extra data (thumbnailDb, duration, etc.)
               : v
           )
         );
@@ -183,6 +183,8 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
                   sensitivityStatus: data.sensitivityStatus,
                   sensitivityScore: data.sensitivityScore,
                   flaggedReasons: data.flaggedReasons,
+                  // Merge potentially new fields like thumbnail and duration if sent in complete event
+                  ...data
                 }
               : v
           )

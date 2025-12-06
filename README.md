@@ -81,7 +81,7 @@ video-uploader/
 - Node.js 18+ and npm
 - MongoDB 6+
 - FFmpeg (for video processing)
-- Cloudinary account (for video storage)
+- Cloudinary account (for production, optional for development)
 
 ### Installation
 
@@ -99,16 +99,22 @@ video-uploader/
 
    Create `.env` file:
    ```env
-   PORT=5000
+   PORT=3001
    MONGODB_URI=mongodb://localhost:27017/video-uploader
    JWT_SECRET=your-super-secret-jwt-key-change-this
    JWT_EXPIRE=7d
    
-   # Cloudinary Configuration
-   CLOUDINARY_CLOUD_NAME=your-cloud-name
-   CLOUDINARY_API_KEY=your-api-key
-   CLOUDINARY_API_SECRET=your-api-secret
+   # Storage Mode: 'local' for development, 'cloudinary' for production
+   # Use 'local' during development to avoid Cloudinary API calls
+   STORAGE_MODE=local
+   
+   # Cloudinary Configuration (only required if STORAGE_MODE=cloudinary)
+   # CLOUDINARY_CLOUD_NAME=your-cloud-name
+   # CLOUDINARY_API_KEY=your-api-key
+   # CLOUDINARY_API_SECRET=your-api-secret
    ```
+
+   **Note:** For development, use `STORAGE_MODE=local` to store videos locally in the `backend/uploads/videos/` directory. This avoids Cloudinary API calls and makes development faster. For production, set `STORAGE_MODE=cloudinary` and configure Cloudinary credentials.
 
 3. **Frontend Setup**
    ```bash
@@ -342,6 +348,12 @@ PORT=3001
 MONGODB_URI=mongodb://localhost:27017/video-uploader
 JWT_SECRET=your-secret-key
 JWT_EXPIRE=7d
+NODE_ENV=development
+
+# Storage Mode: 'local' for development, 'cloudinary' for production
+STORAGE_MODE=local
+
+# Cloudinary Configuration (only needed for STORAGE_MODE=cloudinary)
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret

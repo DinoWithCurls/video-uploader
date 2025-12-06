@@ -34,6 +34,7 @@ export interface Video {
     height: number;
   };
   codec: string;
+  thumbnailUrl: string;
   uploadedBy: {
     _id: string;
     name: string;

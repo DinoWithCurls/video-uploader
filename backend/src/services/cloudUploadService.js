@@ -3,6 +3,7 @@ import fs from "fs";
 import ffmpeg from "fluent-ffmpeg";
 import Video from "../models/Video.js";
 import { processVideo } from "./videoProcessor.js";
+import * as localStorageService from "./localStorageService.js";
 
 /**
  * Process the upload to Cloudinary in the background
@@ -13,25 +14,35 @@ import { processVideo } from "./videoProcessor.js";
 export const processUpload = async (videoId, filePath, io) => {
   console.log('[CloudUploadService.processUpload] Entry:', { videoId, filePath });
   
+  // Check storage mode - use local storage in development
+  const storageMode = process.env.STORAGE_MODE || 'cloudinary';
+  
+  if (storageMode === 'local') {
+    console.log('[CloudUploadService] Using local storage mode');
+    return await localStorageService.processUpload(videoId, filePath, io);
+  }
+  
+  console.log('[CloudUploadService] Using Cloudinary storage mode');
+  
   try {
     const video = await Video.findById(videoId);
     if (!video) {
         throw new Error("Video not found");
     }
 
-    // Determine upload method based on file size (100MB threshold)
+    // Determine upload method based on file size (50MB threshold for chunking)
     const stats = fs.statSync(filePath);
     const fileSize = stats.size;
-    const isLargeFile = fileSize > 100 * 1024 * 1024; // 100MB
+    const isLargeFile = fileSize > 50 * 1024 * 1024; // 50MB
 
-    console.log(`[CloudUploadService] Uploading ${isLargeFile ? 'large' : 'standard'} file (${fileSize} bytes)`);
+    console.log(`[CloudUploadService] Uploading ${isLargeFile ? 'large (>50MB)' : 'standard (<50MB)'} file (${fileSize} bytes)`);
 
     let result;
 
     // ... inside processUpload ...
 
     if (isLargeFile) {
-        console.log('[CloudUploadService] File exceeds 100MB. Compressing to fit Cloudinary Free Plan limits...');
+        console.log('[CloudUploadService] File exceeds 50MB. Compressing to fit Cloudinary limits...');
         const compressedPath = filePath + ".compressed.mp4";
         
         try {
