@@ -104,6 +104,16 @@ export const processUpload = async (videoId, filePath, io) => {
             }
         } catch (compressionError) {
             console.error('[CloudUploadService] Compression failed:', compressionError);
+            
+            // Clean up potentially failed compressed file
+            try {
+                if (fs.existsSync(compressedPath)) {
+                    fs.unlinkSync(compressedPath);
+                }
+            } catch (cleanupErr) {
+                console.error('[CloudUploadService] Failed to clean up compressed file:', cleanupErr);
+            }
+
             // Fallback to original upload_large logic
              result = await new Promise((resolve, reject) => {
                 cloudinary.uploader.upload_large(filePath, {
