@@ -1,5 +1,6 @@
 import React, { useState, useRef } from "react";
 import { useVideos } from "../../hooks/useVideos";
+import Toast from "../common/Toast";
 import logger from "../../utils/logger";
 
 const VideoUpload: React.FC = () => {
@@ -12,7 +13,13 @@ const VideoUpload: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [toast, setToast] = useState<{ type: "success" | "error" | "info" | "warning"; message: string } | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const showToast = (type: "success" | "error" | "info" | "warning", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -40,7 +47,9 @@ const VideoUpload: React.FC = () => {
     const validTypes = ["video/mp4", "video/webm", "video/avi", "video/quicktime"];
     if (!validTypes.includes(file.type)) {
       logger.log('[VideoUpload.handleFileSelect] Invalid file type:', file.type);
-      setError("Invalid file type. Please upload a video file (MP4, WebM, AVI, MOV)");
+      const errorMsg = "Invalid file type. Please upload a video file (MP4, WebM, AVI, MOV)";
+      setError(errorMsg);
+      showToast("error", errorMsg);
       return;
     }
 
@@ -48,13 +57,16 @@ const VideoUpload: React.FC = () => {
     const maxSize = 500 * 1024 * 1024;
     if (file.size > maxSize) {
       logger.log('[VideoUpload.handleFileSelect] File too large:', file.size);
-      setError("File too large. Maximum size is 500MB");
+      const errorMsg = "File too large. Maximum size is 500MB";
+      setError(errorMsg);
+      showToast("error", errorMsg);
       return;
     }
 
     logger.log('[VideoUpload.handleFileSelect] File selected successfully');
     setSelectedFile(file);
     setError(null);
+    showToast("success", "File selected successfully");
   };
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -69,13 +81,17 @@ const VideoUpload: React.FC = () => {
 
     if (!selectedFile) {
       logger.log('[VideoUpload.handleSubmit] No file selected');
-      setError("Please select a video file");
+      const errorMsg = "Please select a video file";
+      setError(errorMsg);
+      showToast("error", errorMsg);
       return;
     }
 
     if (!title.trim()) {
       logger.log('[VideoUpload.handleSubmit] No title provided');
-      setError("Please enter a title");
+      const errorMsg = "Please enter a title";
+      setError(errorMsg);
+      showToast("error", errorMsg);
       return;
     }
 
@@ -95,6 +111,7 @@ const VideoUpload: React.FC = () => {
 
       logger.log('[VideoUpload.handleSubmit] Upload successful');
       setSuccess(true);
+      showToast("success", "Video uploaded successfully! Processing will begin shortly.");
       setTitle("");
       setDescription("");
       setSelectedFile(null);
@@ -104,7 +121,9 @@ const VideoUpload: React.FC = () => {
       setTimeout(() => setSuccess(false), 3000);
     } catch (err: any) {
       logger.error('[VideoUpload.handleSubmit] Upload error:', err);
-      setError(err.message || "Error uploading video");
+      const errorMsg = err.message || "Error uploading video";
+      setError(errorMsg);
+      showToast("error", errorMsg);
     } finally {
       setUploading(false);
     }
@@ -234,8 +253,14 @@ const VideoUpload: React.FC = () => {
 
         {/* Success Message */}
         {success && (
-          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg">
-            Video uploaded successfully! Processing will begin shortly.
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xl">✅</span>
+              <span className="font-semibold">Video uploaded successfully!</span>
+            </div>
+            <p className="text-sm">
+              Your video is now being uploaded to cloud storage and will be processed shortly. You can check the status in the Library.
+            </p>
           </div>
         )}
 
@@ -248,6 +273,15 @@ const VideoUpload: React.FC = () => {
           {uploading ? "Uploading..." : "Upload Video"}
         </button>
       </form>
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 };

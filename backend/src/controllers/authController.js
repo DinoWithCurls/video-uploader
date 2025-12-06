@@ -27,8 +27,14 @@ const extractDomain = (email) => {
   return parts.length === 2 ? parts[1].toLowerCase() : null;
 };
 
+/**
+ * Register a new user and optionally create an organization
+ * POST /api/auth/register
+ */
 export const register = async (req, res) => {
   let organization; // Declare organization here to be accessible in catch block
+  let role = 'admin'; // Default role for new organization creators
+
   try {
     console.log('[AuthController.register] Entry:', { email: req.body.email, name: req.body.name });
     const { name, email, password, organizationName } = req.body;
@@ -39,7 +45,6 @@ export const register = async (req, res) => {
       return res.status(400).json({ message: "Email already in use!" });
     }
 
-    let role = 'admin'; // Default role for new organization creators
     const domain = extractDomain(email);
     const isPublicDomain = domain && PUBLIC_DOMAINS.includes(domain);
 
@@ -133,6 +138,10 @@ export const register = async (req, res) => {
   }
 };
 
+/**
+ * Login user and return token
+ * POST /api/auth/login
+ */
 export const login = async (req, res) => {
   try {
     console.log('[AuthController.login] Entry:', { email: req.body.email });
@@ -177,6 +186,10 @@ export const login = async (req, res) => {
   }
 };
 
+/**
+ * Get current authenticated user
+ * GET /api/auth/me
+ */
 export const getCurrentUser = async (req, res) => {
   try {
     console.log('[AuthController.getCurrentUser] Entry:', { userId: req.user.id });
@@ -209,6 +222,10 @@ export const getCurrentUser = async (req, res) => {
   }
 };
 
+/**
+ * Logout user (clear cookie)
+ * POST /api/auth/logout
+ */
 export const logout = async (req, res) => {
   console.log('[AuthController.logout] User logging out');
   res.clearCookie("token");

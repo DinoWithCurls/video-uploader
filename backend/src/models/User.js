@@ -29,13 +29,13 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ["viewer", "editor", "admin", "superadmin"],
+    enum: ["viewer", "editor", "admin"],
     default: "viewer",
   },
   organizationId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Organization",
-    required: false, // Optional for superadmins
+    required: true,
     index: true,
   },
   isActive: {
@@ -48,14 +48,10 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-userSchema.pre("save", async function (next) {
+userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-  try {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-  } catch (error) {
-    throw error;
-  }
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
 });
 
 userSchema.methods.comparePassword = async function (password) {

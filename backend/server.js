@@ -37,6 +37,10 @@ io.use((socket, next) => {
 });
 
 // Socket.io connection handler
+process.on("unhandledRejection", (err) => {
+  console.log(`Error: ${err.message}`);
+});
+
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.user.id} (${socket.user.email})`);
 

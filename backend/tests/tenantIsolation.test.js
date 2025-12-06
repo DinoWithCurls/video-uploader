@@ -171,8 +171,7 @@ describe("Tenant Isolation Tests", () => {
       ];
 
       for (const op of operations) {
-        const res = await request(app)
-          [op.method](op.path)
+        const res = await request(app)[op.method](op.path)
           .set("Authorization", `Bearer ${org1Token}`);
 
         // Should either be forbidden or not found
@@ -192,8 +191,7 @@ describe("Tenant Isolation Tests", () => {
       ];
 
       for (const op of operations) {
-        const res = await request(app)
-          [op.method](op.path)
+        const res = await request(app)[op.method](op.path)
           .set("Authorization", `Bearer ${org1Token}`)
           .send(op.body || {});
 

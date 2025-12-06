@@ -117,7 +117,7 @@ const VideoDetailPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-5xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-6">
           <button
@@ -128,140 +128,146 @@ const VideoDetailPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Video Player */}
-        <div className="mb-6">
-          <VideoPlayer video={video} />
-        </div>
-
-        {/* Video Details */}
-        <div className="bg-white rounded-lg shadow p-6 space-y-6">
-          {/* Title and Description */}
-          {editing ? (
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Title</label>
-                <input
-                  type="text"
-                  value={editTitle}
-                  onChange={(e) => setEditTitle(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={editDescription}
-                  onChange={(e) => setEditDescription(e.target.value)}
-                  rows={4}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={handleUpdate}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
-                >
-                  Save
-                </button>
-                <button
-                  onClick={() => setEditing(false)}
-                  className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div>
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h1 className="text-2xl font-bold">{video.title}</h1>
-                  {video.description && (
-                    <p className="text-gray-600 mt-2">{video.description}</p>
-                  )}
-                </div>
-                {canModify && (
-                  <button
-                    onClick={() => setEditing(true)}
-                    className="text-blue-600 hover:text-blue-700"
-                  >
-                    ✏️ Edit
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-
-          {/* Metadata */}
-          <div className="grid grid-cols-2 gap-4 pt-4 border-t">
-            <div>
-              <p className="text-sm text-gray-600">File Name</p>
-              <p className="font-medium">{video.filename}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">File Size</p>
-              <p className="font-medium">{formatFileSize(video.filesize)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Uploaded</p>
-              <p className="font-medium">{formatDate(video.createdAt)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-600">Uploaded By</p>
-              <p className="font-medium">{video.uploadedBy.name}</p>
-            </div>
+        <div className="flex flex-col lg:flex-row-reverse gap-8">
+          {/* Right Column: Video Player */}
+          <div className="flex-1 lg:w-2/3 lg:sticky lg:top-8 self-start">
+             <div className="bg-black rounded-lg overflow-hidden shadow-lg">
+                <VideoPlayer video={video} />
+             </div>
           </div>
 
-          {/* Sensitivity Analysis */}
-          <div className="pt-4 border-t">
-            <h3 className="font-semibold mb-3">Sensitivity Analysis</h3>
-            <div className="flex items-center gap-4">
-              <span
-                className={`px-4 py-2 rounded-full text-sm font-medium ${
-                  video.sensitivityStatus === "safe"
-                    ? "bg-green-100 text-green-800"
-                    : video.sensitivityStatus === "flagged"
-                    ? "bg-red-100 text-red-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}
-              >
-                {video.sensitivityStatus === "safe" && "✓ Safe"}
-                {video.sensitivityStatus === "flagged" && "⚠ Flagged"}
-                {video.sensitivityStatus === "pending" && "⏳ Pending"}
-              </span>
-              <span className="text-sm text-gray-600">
-                Score: {video.sensitivityScore}/100
-              </span>
-            </div>
-
-            {video.sensitivityStatus === "flagged" &&
-              video.flaggedReasons.length > 0 && (
-                <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
-                  <p className="font-medium text-red-900 mb-2">
-                    Flagged Reasons:
-                  </p>
-                  <ul className="list-disc list-inside text-sm text-red-800 space-y-1">
-                    {video.flaggedReasons.map((reason, index) => (
-                      <li key={index}>{reason}</li>
-                    ))}
-                  </ul>
+          {/* Left Column: Video Details */}
+          <div className="flex-1 lg:w-1/3 space-y-6">
+            <div className="bg-white rounded-lg shadow p-6 space-y-6">
+              {/* Title and Description */}
+              {editing ? (
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Title</label>
+                    <input
+                      type="text"
+                      value={editTitle}
+                      onChange={(e) => setEditTitle(e.target.value)}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Description
+                    </label>
+                    <textarea
+                      value={editDescription}
+                      onChange={(e) => setEditDescription(e.target.value)}
+                      rows={4}
+                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={handleUpdate}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      onClick={() => setEditing(false)}
+                      className="bg-gray-200 px-4 py-2 rounded-lg hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <h1 className="text-2xl font-bold break-words">{video.title}</h1>
+                      {video.description && (
+                        <p className="text-gray-600 mt-2 whitespace-pre-wrap">{video.description}</p>
+                      )}
+                    </div>
+                    {canModify && (
+                      <button
+                        onClick={() => setEditing(true)}
+                        className="text-blue-600 hover:text-blue-700 ml-4 shrink-0"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
-          </div>
 
-          {/* Actions */}
-          {canModify && (
-            <div className="pt-4 border-t">
-              <button
-                onClick={handleDelete}
-                className="bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
-              >
-                🗑️ Delete Video
-              </button>
+              {/* Metadata */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t">
+                <div>
+                  <p className="text-sm text-gray-600">File Name</p>
+                  <p className="font-medium break-all">{video.filename}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">File Size</p>
+                  <p className="font-medium">{formatFileSize(video.filesize)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Uploaded</p>
+                  <p className="font-medium">{formatDate(video.createdAt)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">Uploaded By</p>
+                  <p className="font-medium">{video.uploadedBy.name}</p>
+                </div>
+              </div>
+
+              {/* Sensitivity Analysis */}
+              <div className="pt-4 border-t">
+                <h3 className="font-semibold mb-3">Sensitivity Analysis</h3>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className={`px-4 py-2 rounded-full text-sm font-medium ${
+                      video.sensitivityStatus === "safe"
+                        ? "bg-green-100 text-green-800"
+                        : video.sensitivityStatus === "flagged"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-gray-100 text-gray-800"
+                    }`}
+                  >
+                    {video.sensitivityStatus === "safe" && "✓ Safe"}
+                    {video.sensitivityStatus === "flagged" && "⚠ Flagged"}
+                    {video.sensitivityStatus === "pending" && "⏳ Pending"}
+                  </span>
+                  <span className="text-sm text-gray-600">
+                    Score: {video.sensitivityScore}/100
+                  </span>
+                </div>
+
+                {video.sensitivityStatus === "flagged" &&
+                  video.flaggedReasons.length > 0 && (
+                    <div className="mt-4 bg-red-50 border border-red-200 rounded-lg p-4">
+                      <p className="font-medium text-red-900 mb-2">
+                        Flagged Reasons:
+                      </p>
+                      <ul className="list-disc list-inside text-sm text-red-800 space-y-1">
+                        {video.flaggedReasons.map((reason, index) => (
+                          <li key={index}>{reason}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+              </div>
+
+              {/* Actions */}
+              {canModify && (
+                <div className="pt-4 border-t">
+                  <button
+                    onClick={handleDelete}
+                    className="w-full bg-red-600 text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    🗑️ Delete Video
+                  </button>
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

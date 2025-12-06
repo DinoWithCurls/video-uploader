@@ -34,12 +34,13 @@ export interface Video {
     height: number;
   };
   codec: string;
+  thumbnailUrl: string;
   uploadedBy: {
     _id: string;
     name: string;
     email: string;
   };
-  status: "pending" | "processing" | "completed" | "failed";
+  status: "pending" | "uploading" | "processing" | "completed" | "failed";
   processingProgress: number;
   sensitivityStatus: "safe" | "flagged" | "pending";
   sensitivityScore: number;
@@ -52,6 +53,12 @@ export interface VideoFilters {
   status?: string;
   sensitivityStatus?: string;
   search?: string;
+  dateFrom?: string | null;
+  dateTo?: string | null;
+  filesizeMin?: number | null;
+  filesizeMax?: number | null;
+  durationMin?: number | null;
+  durationMax?: number | null;
   sortBy?: string;
   order?: "asc" | "desc";
   page?: number;

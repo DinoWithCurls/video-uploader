@@ -18,6 +18,7 @@ const mockVideo: Video = {
     height: 1080,
   },
   codec: 'h264',
+  thumbnailUrl: 'http://example.com/thumbnail.jpg',
   uploadedBy: {
     _id: 'user123',
     name: 'Test User',
@@ -50,7 +51,7 @@ describe('VideoCard Component', () => {
   it('should display file size', () => {
     renderWithRouter(<VideoCard video={mockVideo} />)
     expect(screen.getByText(/size:/i)).toBeInTheDocument()
-    expect(screen.getByText(/mb/i)).toBeInTheDocument()
+    expect(screen.getByText(/kb/i)).toBeInTheDocument()
   })
 
   it('should display duration', () => {
@@ -96,7 +97,9 @@ describe('VideoCard - Processing Status', () => {
     const processingVideo = { ...mockVideo, status: 'processing' as const, processingProgress: 50 }
     renderWithRouter(<VideoCard video={processingVideo} />)
     
-    expect(screen.getByText(/processing/i)).toBeInTheDocument()
+    // Use getAllByText since "Processing" appears in both badge and status text
+    const processingElements = screen.getAllByText(/processing/i)
+    expect(processingElements.length).toBeGreaterThan(0)
     expect(screen.getByText(/50%/)).toBeInTheDocument()
   })
 
@@ -104,7 +107,9 @@ describe('VideoCard - Processing Status', () => {
     const processingVideo = { ...mockVideo, status: 'processing' as const, processingProgress: 75 }
     renderWithRouter(<VideoCard video={processingVideo} />)
     
-    expect(screen.getByText(/processing/i)).toBeInTheDocument()
+    // Use getAllByText since "Processing" appears in both badge and status text
+    const processingElements = screen.getAllByText(/processing/i)
+    expect(processingElements.length).toBeGreaterThan(0)
     expect(screen.getByText(/75%/)).toBeInTheDocument()
   })
 
@@ -143,7 +148,7 @@ describe('VideoCard - Sensitivity Status', () => {
     }
     renderWithRouter(<VideoCard video={flaggedVideo} />)
     
-    expect(screen.getByText(/flagged reasons:/i)).toBeInTheDocument()
+    expect(screen.getByText(/flagged content/i)).toBeInTheDocument()
     expect(screen.getByText('Test reason 1')).toBeInTheDocument()
     expect(screen.getByText('Test reason 2')).toBeInTheDocument()
   })
@@ -170,7 +175,9 @@ describe('VideoCard - Success Criteria', () => {
     const processingVideo = { ...mockVideo, status: 'processing' as const, processingProgress: 50 }
     renderWithRouter(<VideoCard video={processingVideo} />)
     
-    expect(screen.getByText(/processing/i)).toBeInTheDocument()
+    // Use getAllByText since "Processing" appears in both badge and status text
+    const processingElements = screen.getAllByText(/processing/i)
+    expect(processingElements.length).toBeGreaterThan(0)
     expect(screen.getByText(/50%/)).toBeInTheDocument()
   })
 

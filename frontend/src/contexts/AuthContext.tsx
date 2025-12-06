@@ -6,8 +6,8 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  role: "viewer" | "editor" | "admin" | "superadmin";
-  organizationId?: string; // Optional for superadmin
+  role: "viewer" | "editor" | "admin";
+  organizationId: string;
   organization?: {
     id: string;
     name: string;
@@ -34,30 +34,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if user is logged in on mount
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
   const checkAuth = async () => {
     logger.log('[AuthContext.checkAuth] Checking authentication');
     const storedToken = localStorage.getItem("token");
-    if (storedToken) {
+    const storedUser = localStorage.getItem("user");
+
+    if (storedToken && storedUser) {
       try {
-        const response = await authAPI.getCurrentUser();
-        setUser(response.data.user);
         setToken(storedToken);
-        logger.log('[AuthContext.checkAuth] User authenticated:', { userId: response.data.user.id, role: response.data.user.role });
-      } catch (err) {
-        logger.error('[AuthContext.checkAuth] Error:', err);
+        setUser(JSON.parse(storedUser));
+        // setIsAuthenticated(true); // This variable is not defined in the current context.
+      } catch (error) {
+        logger.error('[AuthContext.checkAuth] Error parsing stored user:', error);
         localStorage.removeItem("token");
-        setToken(null);
+        localStorage.removeItem("user");
       }
     } else {
       logger.log('[AuthContext.checkAuth] No token found');
     }
     setLoading(false);
   };
+
+  // Check if user is logged in on mount
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    checkAuth();
+  }, []);
 
   const register = async (userData: any) => {
     try {
@@ -66,6 +68,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.register(userData);
       const { token: newToken, user } = response.data;
       localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(user));
       setToken(newToken);
       setUser(user);
       
@@ -89,6 +92,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const response = await authAPI.login(credentials);
       const { token: newToken, user } = response.data;
       localStorage.setItem("token", newToken);
+      localStorage.setItem("user", JSON.stringify(user));
       setToken(newToken);
       setUser(user);
       
@@ -108,6 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const logout = () => {
     logger.log('[AuthContext.logout] Logging out user');
     localStorage.removeItem("token");
+    localStorage.removeItem("user");
     setToken(null);
     setUser(null);
     logger.log('[AuthContext.logout] User logged out');
