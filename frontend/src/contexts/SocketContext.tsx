@@ -21,11 +21,9 @@ export const SocketProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     if (!token) {
       // Disconnect if no token
-      if (socket) {
-        socket.disconnect();
-        setSocket(null);
-        setConnected(false);
-      }
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setSocket(null);
+      setConnected(false);
       return;
     }
 

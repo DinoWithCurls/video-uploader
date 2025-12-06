@@ -17,12 +17,13 @@ const videoSchema = new mongoose.Schema({
   },
   storedFilename: {
     type: String,
-    required: true,
+    // required: true, // Removed required as it's set after async upload
     unique: true,
+    sparse: true, // Allow multiple null/undefined values
   },
   filepath: {
     type: String,
-    required: true,
+    // required: true, // Removed required as it's set after async upload
   },
   filesize: {
     type: Number,
@@ -50,6 +51,10 @@ const videoSchema = new mongoose.Schema({
     type: String,
     default: "",
   },
+  thumbnailUrl: {
+    type: String,
+    default: "",
+  },
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -63,7 +68,7 @@ const videoSchema = new mongoose.Schema({
   },
   status: {
     type: String,
-    enum: ["pending", "processing", "completed", "failed"],
+    enum: ["pending", "uploading", "processing", "completed", "failed"],
     default: "pending",
   },
   processingProgress: {
@@ -100,6 +105,10 @@ const videoSchema = new mongoose.Schema({
 videoSchema.index({ organizationId: 1, uploadedBy: 1, createdAt: -1 });
 videoSchema.index({ organizationId: 1, status: 1 });
 videoSchema.index({ organizationId: 1, sensitivityStatus: 1 });
+// Indexes for range filtering
+videoSchema.index({ organizationId: 1, createdAt: -1 });
+videoSchema.index({ organizationId: 1, filesize: 1 });
+videoSchema.index({ organizationId: 1, duration: 1 });
 
 // Update the updatedAt timestamp before saving
 videoSchema.pre("save", function () {

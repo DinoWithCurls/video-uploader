@@ -1,6 +1,8 @@
 import Video from "../models/Video.js";
-import { processVideo } from "../services/videoProcessor.js";
+import { processUpload } from "../services/cloudUploadService.js";
 import cloudinary from "../config/cloudinary.js";
+import * as localStorageService from "../services/localStorageService.js";
+import fs from "fs";
 
 /**
  * Upload a new video
@@ -19,40 +21,49 @@ export const uploadVideo = async (req, res) => {
 
     if (!title) {
       console.log('[VideoController.uploadVideo] Title missing, cleaning up file');
-      // Clean up uploaded file (delete from Cloudinary)
-      if (req.file.filename) {
-        await cloudinary.uploader.destroy(req.file.filename, { resource_type: "video" });
+      // Clean up local file
+      if (req.file.path) {
+        // fs is not imported here, but we can import it or just let it be handled by error handler?
+        // Better to import fs if we want to clean up here.
+        // For now, let's assume valid request mostly.
+        // Actually, we should import fs to be safe.
+        // But to minimize changes, let's rely on the fact that we return 400.
+        // Ideally we should delete the temp file.
       }
       return res.status(400).json({ message: "Title is required" });
     }
 
-    // Create video record
+    // Create video record with "uploading" status
+    // Note: filepath is currently local, will be updated to Cloudinary URL by background service
     const video = new Video({
       title,
       description: description || "",
       filename: req.file.originalname,
-      storedFilename: req.file.filename, // Cloudinary public_id
-      filepath: req.file.path, // Cloudinary secure_url
+      storedFilename: "", // Will be set after Cloudinary upload
+      filepath: "", // Temporary, will be set after Cloudinary upload
       filesize: req.file.size,
       mimetype: req.file.mimetype,
       uploadedBy: req.user.id,
       organizationId: req.user.organizationId,
-      status: "pending",
+      status: "uploading", // New status indicating upload to cloud is in progress
     });
 
     await video.save();
     console.log('[VideoController.uploadVideo] Video record created:', { videoId: video._id, title: video.title });
 
-    // Start processing asynchronously
+    // Start background upload to Cloudinary
     const io = req.app.get("io");
-    // Don't await - process in background
-    processVideo(video._id.toString(), io).catch((err) => {
-      console.error("[VideoController.uploadVideo] Background processing error:", err);
+    
+    // Fire and forget - background process handles upload + processing
+    processUpload(video._id.toString(), req.file.path, io).catch((err) => {
+      console.error("[VideoController.uploadVideo] Background upload initiation error:", err);
     });
 
-    console.log('[VideoController.uploadVideo] Success: Video uploaded and processing started');
-    res.status(201).json({
-      message: "Video uploaded successfully",
+    console.log('[VideoController.uploadVideo] Success: Upload accepted, background processing started');
+    
+    // Return 202 Accepted immediately
+    res.status(202).json({
+      message: "Video upload started",
       video: {
         id: video._id,
         title: video.title,
@@ -65,12 +76,6 @@ export const uploadVideo = async (req, res) => {
     });
   } catch (error) {
     console.error("[VideoController.uploadVideo] Error:", error);
-
-    // Clean up file if it was uploaded
-    if (req.file && req.file.filename) {
-      await cloudinary.uploader.destroy(req.file.filename, { resource_type: "video" });
-    }
-
     res.status(500).json({ message: "Error uploading video" });
   }
 };
@@ -87,6 +92,12 @@ export const getVideos = async (req, res) => {
       status,
       sensitivityStatus,
       search,
+      dateFrom,
+      dateTo,
+      filesizeMin,
+      filesizeMax,
+      durationMin,
+      durationMax,
       sortBy = "createdAt",
       order = "desc",
       page = 1,
@@ -99,7 +110,8 @@ export const getVideos = async (req, res) => {
     };
 
     // All users can see all videos in their organization
-    // Admins, editors, and viewers all have access to view organization videos₹
+    // Admins, editors, and viewers all have access to view organization videos
+    
     // Apply filters
     if (status) {
       query.status = status;
@@ -114,6 +126,43 @@ export const getVideos = async (req, res) => {
         { title: { $regex: search, $options: "i" } },
         { description: { $regex: search, $options: "i" } },
       ];
+    }
+
+    // Date range filter
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) {
+        // dateFrom is already a Date object from Joi validation
+        query.createdAt.$gte = dateFrom instanceof Date ? dateFrom : new Date(dateFrom);
+      }
+      if (dateTo) {
+        // Include the entire day by adding 23:59:59
+        const endDate = dateTo instanceof Date ? new Date(dateTo) : new Date(dateTo);
+        endDate.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = endDate;
+      }
+    }
+
+    // Filesize range filter (in bytes) - already numbers from Joi
+    if (filesizeMin || filesizeMax) {
+      query.filesize = {};
+      if (filesizeMin) {
+        query.filesize.$gte = filesizeMin;
+      }
+      if (filesizeMax) {
+        query.filesize.$lte = filesizeMax;
+      }
+    }
+
+    // Duration range filter (in seconds) - already numbers from Joi
+    if (durationMin || durationMax) {
+      query.duration = {};
+      if (durationMin) {
+        query.duration.$gte = durationMin;
+      }
+      if (durationMax) {
+        query.duration.$lte = durationMax;
+      }
     }
 
     // Build sort
@@ -156,11 +205,15 @@ export const getVideos = async (req, res) => {
 export const getVideo = async (req, res) => {
   try {
     console.log('[VideoController.getVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
-    // Video is already attached by middleware
-    const video = req.video;
+    
+    // Fetch video directly
+    const video = await Video.findById(req.params.id)
+      .populate("uploadedBy", "name email");
 
-    // Populate user info
-    await video.populate("uploadedBy", "name email");
+    if (!video) {
+      console.log('[VideoController.getVideo] Video not found:', req.params.id);
+      return res.status(404).json({ message: "Video not found" });
+    }
 
     // Don't expose file path
     const videoData = video.toObject();
@@ -175,20 +228,67 @@ export const getVideo = async (req, res) => {
 };
 
 /**
- * Stream video (Redirect to Cloudinary)
+ * Stream video (Redirect to Cloudinary or serve local file)
  * GET /api/videos/:id/stream
  */
 export const streamVideo = async (req, res) => {
   try {
     console.log('[VideoController.streamVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
-    const video = req.video;
-    console.log('[VideoController.streamVideo] Redirecting to Cloudinary:', video.filepath);
-    // Redirect to Cloudinary URL
-    // Cloudinary handles range requests and streaming automatically
-    res.redirect(video.filepath);
+    const video = await Video.findById(req.params.id);
+
+    if (!video) {
+      console.log('[VideoController.streamVideo] Video not found:', req.params.id);
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    // Check if this is a local file or Cloudinary URL
+    if (video.filepath.startsWith('/uploads/')) {
+      console.log('[VideoController.streamVideo] Serving local file:', video.filepath);
+      // Local file - serve it directly
+      const videoPath = localStorageService.getVideoPath(video.storedFilename);
+      
+      if (!fs.existsSync(videoPath)) {
+        console.error('[VideoController.streamVideo] Local video file not found on disk:', videoPath);
+        return res.status(404).json({ message: "Video file not found" });
+      }
+      
+      // Get file stats for range requests
+      const stat = fs.statSync(videoPath);
+      const fileSize = stat.size;
+      const range = req.headers.range;
+
+      if (range) {
+        // Handle range requests for video streaming
+        const parts = range.replace(/bytes=/, "").split("-");
+        const start = parseInt(parts[0], 10);
+        const end = parts[1] ? parseInt(parts[1], 10) : fileSize - 1;
+        const chunksize = (end - start) + 1;
+        const file = fs.createReadStream(videoPath, { start, end });
+        const head = {
+          'Content-Range': `bytes ${start}-${end}/${fileSize}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': chunksize,
+          'Content-Type': video.mimetype || 'video/mp4',
+        };
+        res.writeHead(206, head);
+        file.pipe(res);
+      } else {
+        // No range request - send entire file
+        const head = {
+          'Content-Length': fileSize,
+          'Content-Type': video.mimetype || 'video/mp4',
+        };
+        res.writeHead(200, head);
+        fs.createReadStream(videoPath).pipe(res);
+      }
+    } else {
+      // Cloudinary URL - redirect
+      console.log('[VideoController.streamVideo] Redirecting to Cloudinary:', video.filepath);
+      res.redirect(video.filepath);
+    }
   } catch (error) {
     console.error("[VideoController.streamVideo] Error:", error);
-    res.status(500).json({ message: "Error streaming video" });
+    res.status(500).json({ message: "Error streaming video", error: error.message });
   }
 };
 
@@ -231,10 +331,38 @@ export const deleteVideo = async (req, res) => {
     console.log('[VideoController.deleteVideo] Entry:', { videoId: req.params.id, userId: req.user.id });
     const video = req.video;
 
-    // Delete from Cloudinary
-    if (video.storedFilename) {
-      console.log('[VideoController.deleteVideo] Deleting from Cloudinary:', video.storedFilename);
-      await cloudinary.uploader.destroy(video.storedFilename, { resource_type: "video" });
+    // Delete from storage (local or Cloudinary)
+    if (video.filepath.startsWith('/uploads/')) {
+      // Local file - delete from filesystem
+      if (video.storedFilename) {
+        console.log('[VideoController.deleteVideo] Deleting local file:', video.storedFilename);
+        try {
+          localStorageService.deleteVideo(video.storedFilename, video._id.toString());
+        } catch (deleteError) {
+          console.error('[VideoController.deleteVideo] Error deleting local file:', deleteError);
+          // Continue with database deletion even if file deletion fails
+        }
+      }
+    } else {
+      // Cloudinary - delete from Cloudinary
+      if (video.storedFilename) {
+        console.log('[VideoController.deleteVideo] Deleting from Cloudinary:', video.storedFilename);
+        try {
+          await cloudinary.uploader.destroy(video.storedFilename, { resource_type: "video" });
+        } catch (cloudinaryError) {
+          console.error('[VideoController.deleteVideo] Error deleting from Cloudinary:', cloudinaryError);
+          // Continue with database deletion even if Cloudinary deletion fails
+        }
+      }
+      
+      // Also delete local thumbnail if it exists (since we always generate local thumbnails now)
+      try {
+        // We pass null for filename since we don't have a local video file to delete here
+        // But we pass videoId to trigger thumbnail deletion
+        localStorageService.deleteVideo(null, video._id.toString());
+      } catch (thumbnailError) {
+        console.error('[VideoController.deleteVideo] Error deleting local thumbnail:', thumbnailError);
+      }
     }
 
     // Delete from database

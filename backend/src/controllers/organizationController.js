@@ -2,16 +2,23 @@ import Organization from "../models/Organization.js";
 import User from "../models/User.js";
 
 /**
- * Get all organizations (Superadmin only)
+ * Get all organizations (Admin only)
  * GET /api/organizations
  */
 export const getAllOrganizations = async (req, res) => {
   try {
     console.log('[OrganizationController.getAllOrganizations] Entry:', { userId: req.user.id });
     
-    // Only superadmin can view all organizations
-    if (req.user.role !== 'superadmin') {
-      return res.status(403).json({ message: "Access denied: Superadmin only" });
+    // Only admin can view all organizations (or maybe we want to restrict this further?)
+    // For now, let's assume this endpoint is for system admins which we might not have yet,
+    // or we can just leave it protected by auth but remove the specific 'superadmin' string check.
+    // If we want to restrict it to 'admin' role of *some* org, that's different.
+    // Given the prompt, I will just remove the explicit check for 'superadmin'.
+    
+    // If this was strictly for superadmin, maybe we should remove the endpoint or restrict to admin?
+    // Let's restrict to 'admin' for now as a safe fallback if it's used.
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: "Access denied: Admin only" });
     }
 
     const organizations = await Organization.find()

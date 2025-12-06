@@ -2,37 +2,85 @@ import React, { useState, useEffect } from "react";
 import { useVideos } from "../../hooks/useVideos";
 import { useAuth } from "../../hooks/useAuth";
 import VideoCard from "./VideoCard";
+import VideoFilters from "./VideoFilters";
+import type { AdvancedFilters } from "./VideoFilters";
+import Modal from "../common/Modal";
+import Toast from "../common/Toast";
+import VideoCardSkeleton from "../common/VideoCardSkeleton";
 
 const VideoList: React.FC = () => {
   const { videos, loading, error, pagination, fetchVideos, deleteVideo } =
     useVideos();
   const { user } = useAuth();
 
-  const [filters, setFilters] = useState({
+  const [filters, setFilters] = useState<AdvancedFilters>({
     status: "",
     sensitivityStatus: "",
     search: "",
+    dateFrom: null,
+    dateTo: null,
+    filesizeMin: null,
+    filesizeMax: null,
+    durationMin: null,
+    durationMax: null,
     sortBy: "createdAt",
-    order: "desc" as "asc" | "desc",
+    order: "desc",
     page: 1,
     limit: 12,
   });
+
+  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; videoId: string | null; videoTitle: string }>({
+    isOpen: false,
+    videoId: null,
+    videoTitle: "",
+  });
+
+  const [toast, setToast] = useState<{ type: "success" | "error" | "info" | "warning"; message: string } | null>(null);
+
+  const showToast = (type: "success" | "error" | "info" | "warning", message: string) => {
+    setToast({ type, message });
+    setTimeout(() => setToast(null), 5000);
+  };
 
   useEffect(() => {
     fetchVideos(filters);
   }, [filters, fetchVideos]);
 
-  const handleFilterChange = (key: string, value: string) => {
+  const handleFilterChange = (key: keyof AdvancedFilters, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
   };
 
-  const handleDelete = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this video?")) {
-      try {
-        await deleteVideo(id);
-      } catch (err) {
-        console.error("Error deleting video:", err);
-      }
+  const handleClearAll = () => {
+    setFilters({
+      status: "",
+      sensitivityStatus: "",
+      search: "",
+      dateFrom: null,
+      dateTo: null,
+      filesizeMin: null,
+      filesizeMax: null,
+      durationMin: null,
+      durationMax: null,
+      sortBy: "createdAt",
+      order: "desc",
+      page: 1,
+      limit: 12,
+    });
+  };
+
+  const handleDeleteClick = (id: string, title: string) => {
+    setDeleteModal({ isOpen: true, videoId: id, videoTitle: title });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteModal.videoId) return;
+
+    try {
+      await deleteVideo(deleteModal.videoId);
+      showToast("success", "Video deleted successfully");
+    } catch (err: any) {
+      console.error("Error deleting video:", err);
+      showToast("error", err.message || "Error deleting video");
     }
   };
 
@@ -49,91 +97,12 @@ const VideoList: React.FC = () => {
         <h2 className="text-2xl font-bold">My Videos</h2>
       </div>
 
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow space-y-4">
-        {/* Search */}
-        <div>
-          <input
-            type="text"
-            placeholder="Search videos..."
-            value={filters.search}
-            onChange={(e) => handleFilterChange("search", e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          />
-        </div>
-
-        {/* Filter Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Status Filter */}
-          <div>
-            <label htmlFor="status-filter" className="block text-sm font-medium mb-1">Status</label>
-            <select
-              id="status-filter"
-              value={filters.status}
-              onChange={(e) => handleFilterChange("status", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All</option>
-              <option value="pending">Pending</option>
-              <option value="processing">Processing</option>
-              <option value="completed">Completed</option>
-              <option value="failed">Failed</option>
-            </select>
-          </div>
-
-          {/* Sensitivity Filter */}
-          <div>
-            <label htmlFor="sensitivity-filter" className="block text-sm font-medium mb-1">
-              Sensitivity
-            </label>
-            <select
-              id="sensitivity-filter"
-              value={filters.sensitivityStatus}
-              onChange={(e) =>
-                handleFilterChange("sensitivityStatus", e.target.value)
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="">All</option>
-              <option value="safe">Safe</option>
-              <option value="flagged">Flagged</option>
-              <option value="pending">Pending</option>
-            </select>
-          </div>
-
-          {/* Sort By */}
-          <div>
-            <label htmlFor="sort-by-filter" className="block text-sm font-medium mb-1">Sort By</label>
-            <select
-              id="sort-by-filter"
-              value={filters.sortBy}
-              onChange={(e) => handleFilterChange("sortBy", e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="createdAt">Upload Date</option>
-              <option value="title">Title</option>
-              <option value="filesize">File Size</option>
-              <option value="duration">Duration</option>
-            </select>
-          </div>
-
-          {/* Order */}
-          <div>
-            <label htmlFor="order-filter" className="block text-sm font-medium mb-1">Order</label>
-            <select
-              id="order-filter"
-              value={filters.order}
-              onChange={(e) =>
-                handleFilterChange("order", e.target.value as "asc" | "desc")
-              }
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option value="desc">Descending</option>
-              <option value="asc">Ascending</option>
-            </select>
-          </div>
-        </div>
-      </div>
+      {/* Advanced Filters */}
+      <VideoFilters
+        filters={filters}
+        onFilterChange={handleFilterChange}
+        onClearAll={handleClearAll}
+      />
 
       {/* Error Message */}
       {error && (
@@ -142,11 +111,12 @@ const VideoList: React.FC = () => {
         </div>
       )}
 
-      {/* Loading State */}
+      {/* Loading State with Skeletons */}
       {loading && (
-        <div className="text-center py-12">
-          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-          <p className="mt-4 text-gray-600">Loading videos...</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(6)].map((_, i) => (
+            <VideoCardSkeleton key={i} />
+          ))}
         </div>
       )}
 
@@ -157,7 +127,7 @@ const VideoList: React.FC = () => {
             <VideoCard
               key={video._id}
               video={video}
-              onDelete={canDelete ? handleDelete : undefined}
+              onDelete={canDelete ? (id) => handleDeleteClick(id, video.title) : undefined}
             />
           ))}
         </div>
@@ -199,6 +169,27 @@ const VideoList: React.FC = () => {
             Next
           </button>
         </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={deleteModal.isOpen}
+        onClose={() => setDeleteModal({ isOpen: false, videoId: null, videoTitle: "" })}
+        onConfirm={handleConfirmDelete}
+        title="Delete Video"
+        message={`Are you sure you want to delete "${deleteModal.videoTitle}"? This action cannot be undone.`}
+        confirmText="Delete"
+        cancelText="Cancel"
+        type="danger"
+      />
+
+      {/* Toast Notification */}
+      {toast && (
+        <Toast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
+        />
       )}
     </div>
   );

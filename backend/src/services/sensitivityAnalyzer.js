@@ -93,7 +93,9 @@ export const analyzeSensitivity = async (filepath, metadata, filename) => {
  * @param {string} filepath - Path to video file
  * @returns {Promise<object>}
  */
-export const analyzeWithMLModel = async (filepath) => {
+export const analyzeContent = async (file) => {
+    // Simulate processing delay
+    await new Promise((resolve) => setTimeout(resolve, 2000)); // - Send frames to ML API
   // Future implementation:
   // - Extract video frames at intervals
   // - Send frames to ML API

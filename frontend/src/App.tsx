@@ -12,7 +12,7 @@ import VideoUploadPage from "./pages/VideoUploadPage.tsx";
 import VideoDetailPage from "./pages/VideoDetailPage.tsx";
 import UserManagement from "./components/admin/UserManagement.tsx";
 import OrganizationSettings from "./components/admin/OrganizationSettings.tsx";
-import SuperAdminDashboard from "./pages/SuperAdminDashboard.tsx";
+
 import Layout from "./components/common/Layout.tsx";
 
 // Dashboard component with organization display
@@ -128,14 +128,7 @@ function App() {
                       </ProtectedRoute>
                     }
                   />
-                  <Route
-                    path="/superadmin"
-                    element={
-                      <ProtectedRoute roles={["superadmin"]}>
-                        <SuperAdminDashboard />
-                      </ProtectedRoute>
-                    }
-                  />
+
                 </Route>
 
                 <Route path="/" element={<Navigate to="/dashboard" />} />

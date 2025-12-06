@@ -13,15 +13,13 @@ A full-stack multi-tenant video upload, processing, and streaming application wi
 
 ### User Management
 - **Role-Based Access Control (RBAC)**
-  - **Viewer** - View videos only
-  - **Editor** - Upload, edit, and delete own videos
-  - **Admin** - Full organization management
-  - **Superadmin** - Global platform access
+  - **Viewer** - Can view videos
+  - **Editor** - Can upload and manage own videos
+  - **Admin** - Full organization control
 - **Auto-join by Email Domain** - Automatic organization assignment based on email domain
 - **Organization Management** - Create and manage organizations with settings
 
 ### Advanced Features
-- **Superadmin Dashboard** - View and manage all organizations
 - **Video Filtering & Search** - Filter by status, sensitivity, search by title
 - **Pagination & Sorting** - Efficient browsing of large video libraries
 - **Responsive UI** - Mobile-friendly interface with modern design
@@ -83,7 +81,7 @@ video-uploader/
 - Node.js 18+ and npm
 - MongoDB 6+
 - FFmpeg (for video processing)
-- Cloudinary account (for video storage)
+- Cloudinary account (for production, optional for development)
 
 ### Installation
 
@@ -101,16 +99,22 @@ video-uploader/
 
    Create `.env` file:
    ```env
-   PORT=5000
+   PORT=3001
    MONGODB_URI=mongodb://localhost:27017/video-uploader
    JWT_SECRET=your-super-secret-jwt-key-change-this
    JWT_EXPIRE=7d
    
-   # Cloudinary Configuration
-   CLOUDINARY_CLOUD_NAME=your-cloud-name
-   CLOUDINARY_API_KEY=your-api-key
-   CLOUDINARY_API_SECRET=your-api-secret
+   # Storage Mode: 'local' for development, 'cloudinary' for production
+   # Use 'local' during development to avoid Cloudinary API calls
+   STORAGE_MODE=local
+   
+   # Cloudinary Configuration (only required if STORAGE_MODE=cloudinary)
+   # CLOUDINARY_CLOUD_NAME=your-cloud-name
+   # CLOUDINARY_API_KEY=your-api-key
+   # CLOUDINARY_API_SECRET=your-api-secret
    ```
+
+   **Note:** For development, use `STORAGE_MODE=local` to store videos locally in the `backend/uploads/videos/` directory. This avoids Cloudinary API calls and makes development faster. For production, set `STORAGE_MODE=cloudinary` and configure Cloudinary credentials.
 
 3. **Frontend Setup**
    ```bash
@@ -161,7 +165,7 @@ npm run test:watch
 
 - **Backend:** 75/99 tests passing (76%)
   - All core features: 100% tested ✅
-  - Auth, RBAC, Multi-tenant, Superadmin: Fully tested
+  - Auth, RBAC, Multi-tenant: Fully tested
   
 - **Frontend:** 65/71 tests passing (92%)
   - All core components tested
@@ -173,10 +177,9 @@ npm run test:watch
 
 | Role | Permissions |
 |------|-------------|
-| **Viewer** | View videos in organization |
-| **Editor** | Upload, edit, delete own videos |
-| **Admin** | Full organization management, manage users |
-| **Superadmin** | Global access to all organizations |
+| **Admin** | Full control within their organization |
+| **Editor** | Can upload and manage their own videos |
+| **Viewer** | Read-only access to organization videos |
 
 ### Auto-Join Logic
 
@@ -225,7 +228,7 @@ Complete API documentation available in [API.md](./API.md)
 - `POST /api/videos/upload` - Upload video
 - `GET /api/videos` - List videos
 - `GET /api/videos/:id/stream` - Stream video
-- `GET /api/organizations` - List organizations (superadmin)
+- `GET /api/organizations` - List organizations (admin)
 - `PUT /api/users/:id/role` - Update user role
 
 ## 🔌 WebSocket Events
@@ -262,7 +265,7 @@ socket.on('video:failed', ({ videoId, error }) => {
 - Password hashing (bcrypt)
 - Role-based access control
 - Multi-tenant data isolation
-- Superadmin access logging
+
 - CORS configuration
 - Input validation
 
@@ -275,7 +278,7 @@ socket.on('video:failed', ({ videoId, error }) => {
 - Integration tests for API endpoints
 - Multi-tenant isolation tests
 - RBAC permission tests
-- Superadmin functionality tests
+
 
 ### Frontend Tests
 - Component unit tests
@@ -345,6 +348,12 @@ PORT=3001
 MONGODB_URI=mongodb://localhost:27017/video-uploader
 JWT_SECRET=your-secret-key
 JWT_EXPIRE=7d
+NODE_ENV=development
+
+# Storage Mode: 'local' for development, 'cloudinary' for production
+STORAGE_MODE=local
+
+# Cloudinary Configuration (only needed for STORAGE_MODE=cloudinary)
 CLOUDINARY_CLOUD_NAME=your-cloud-name
 CLOUDINARY_API_KEY=your-api-key
 CLOUDINARY_API_SECRET=your-api-secret

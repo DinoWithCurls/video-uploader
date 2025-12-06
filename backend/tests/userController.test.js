@@ -87,17 +87,19 @@ describe("User Controller Tests", () => {
     });
 
     it("should sort users by creation date (newest first)", async () => {
-      const res = await request(app)
+      const response = await request(app)
         .get("/api/users")
         .set("Authorization", `Bearer ${adminToken}`);
 
-      expect(res.status).toBe(200);
-      const dates = res.body.map((u) => new Date(u.createdAt));
+      expect(response.status).toBe(200);
+
+      const dates = response.body.map((u) => new Date(u.createdAt));
       for (let i = 0; i < dates.length - 1; i++) {
         expect(dates[i].getTime()).toBeGreaterThanOrEqual(dates[i + 1].getTime());
       }
     });
   });
+
 
   describe("PUT /api/users/:id/role", () => {
     it("should update user role successfully", async () => {
@@ -201,16 +203,14 @@ describe("User Controller Tests", () => {
 
       for (const endpoint of endpoints) {
         // Admin should succeed
-        const adminRes = await request(app)
-          [endpoint.method](endpoint.path)
+        const adminRes = await request(app)[endpoint.method](endpoint.path)
           .set("Authorization", `Bearer ${adminToken}`)
           .send(endpoint.body || {});
 
         expect([200, 201]).toContain(adminRes.status);
 
         // Editor should fail
-        const editorRes = await request(app)
-          [endpoint.method](endpoint.path)
+        const editorRes = await request(app)[endpoint.method](endpoint.path)
           .set("Authorization", `Bearer ${editorToken}`)
           .send(endpoint.body || {});
 

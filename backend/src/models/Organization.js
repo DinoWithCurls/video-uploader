@@ -66,7 +66,7 @@ const organizationSchema = new mongoose.Schema(
 );
 
 // Indexes
-organizationSchema.index({ slug: 1 });
+// organizationSchema.index({ slug: 1 }); // Removed duplicate index (unique: true handles it)
 organizationSchema.index({ owner: 1 });
 organizationSchema.index({ isActive: 1 });
 

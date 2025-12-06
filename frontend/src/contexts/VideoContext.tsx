@@ -3,9 +3,9 @@ import type { Video, VideoFilters } from "../services/videoService";
 import logger from "../utils/logger";
 import {
   getVideos as fetchVideosAPI,
-  uploadVideo as uploadVideoAPI,
   deleteVideo as deleteVideoAPI,
   updateVideo as updateVideoAPI,
+  uploadVideo as uploadVideoAPI,
 } from "../services/videoService";
 import { useSocket } from "../hooks/useSocket";
 
@@ -88,7 +88,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
           resolution: { width: 0, height: 0 },
           codec: "",
           uploadedBy: { _id: "", name: "", email: "" },
-          status: "pending",
+          status: (response.video as any).status || "pending",
           processingProgress: 0,
           sensitivityStatus: "pending",
           sensitivityScore: 0,
@@ -162,7 +162,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
         setVideos((prev) =>
           prev.map((v) =>
             v._id === data.videoId
-              ? { ...v, processingProgress: data.progress }
+              ? { ...v, processingProgress: data.progress, ...data } // Merge any extra data (thumbnailDb, duration, etc.)
               : v
           )
         );
@@ -183,6 +183,8 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
                   sensitivityStatus: data.sensitivityStatus,
                   sensitivityScore: data.sensitivityScore,
                   flaggedReasons: data.flaggedReasons,
+                  // Merge potentially new fields like thumbnail and duration if sent in complete event
+                  ...data
                 }
               : v
           )

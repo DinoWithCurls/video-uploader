@@ -13,8 +13,8 @@ export const tenant = async (req, res, next) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    // Ensure user has organization (unless superadmin)
-    if (!req.user.organizationId && req.user.role !== 'superadmin') {
+    // Ensure user has organization
+    if (!req.user.organizationId) {
       console.log('[Tenant.middleware] User has no organization:', req.user.id);
       return res.status(400).json({ 
         message: "User not associated with any organization. Please contact support." 

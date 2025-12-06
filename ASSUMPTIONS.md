@@ -139,9 +139,7 @@ req.organizationId = req.user.organizationId;
 ```
 
 **Assumptions:**
-- Every authenticated user (except superadmin) belongs to exactly one organization
-- Organization context is required for all data operations
-- Superadmins can bypass tenant isolation
+- Every authenticated user belongs to exactly one organization
 
 #### 2. Database-Level Isolation
 
@@ -157,7 +155,7 @@ User.find({ organizationId: req.organizationId })
 
 **Assumptions:**
 - All multi-tenant models have `organizationId` field
-- Queries always filter by `organizationId` (except superadmin)
+- Queries always filter by `organizationId`
 - No cross-organization data leakage
 
 #### 3. Auto-Join by Email Domain
@@ -202,26 +200,6 @@ User 3: bob@gmail.com
 → Role: admin
 ```
 
-### Superadmin Role
-
-**Special Characteristics:**
-- **No Organization:** `organizationId` is `null`
-- **Global Access:** Can access resources from any organization
-- **Bypass Tenant Middleware:** Skips organization requirement check
-- **RBAC Override:** Explicitly granted access in middleware
-
-**Use Cases:**
-- Platform administration
-- Cross-organization analytics
-- Support and debugging
-- Organization management
-
-**Security Considerations:**
-- Superadmin accounts should be limited
-- All superadmin actions should be logged
-- Consider IP whitelisting for superadmin access
-- Require 2FA for superadmin accounts
-
 ---
 
 ## Authentication & Authorization
@@ -231,7 +209,7 @@ User 3: bob@gmail.com
 ```javascript
 {
   id: userId,
-  organizationId: organizationId, // null for superadmin
+  organizationId: organizationId,
   iat: issuedAt,
   exp: expiresIn
 }
@@ -246,29 +224,28 @@ User 3: bob@gmail.com
 ### Role Hierarchy
 
 ```
-viewer < editor < admin < superadmin
+viewer < editor < admin
 ```
 
 **Permissions:**
 
-| Action | Viewer | Editor | Admin | Superadmin |
-|--------|--------|--------|-------|------------|
-| View videos (own org) | ✅ | ✅ | ✅ | ✅ |
-| Upload videos | ❌ | ✅ | ✅ | ✅ |
-| Edit own videos | ❌ | ✅ | ✅ | ✅ |
-| Delete own videos | ❌ | ✅ | ✅ | ✅ |
-| Edit any video (org) | ❌ | ❌ | ✅ | ✅ |
-| Delete any video (org) | ❌ | ❌ | ✅ | ✅ |
-| Manage users (org) | ❌ | ❌ | ✅ | ✅ |
-| Manage organization | ❌ | ❌ | ✅ (owner) | ✅ |
-| View all organizations | ❌ | ❌ | ❌ | ✅ |
-| Cross-org access | ❌ | ❌ | ❌ | ✅ |
+| Action | Viewer | Editor | Admin |
+|--------|--------|--------|-------|
+| View videos (own org) | ✅ | ✅ | ✅ |
+| Upload videos | ❌ | ✅ | ✅ |
+| Edit own videos | ❌ | ✅ | ✅ |
+| Delete own videos | ❌ | ✅ | ✅ |
+| Edit any video (org) | ❌ | ❌ | ✅ |
+| Delete any video (org) | ❌ | ❌ | ✅ |
+| Manage users (org) | ❌ | ❌ | ✅ |
+| Manage organization | ❌ | ❌ | ✅ (owner) |
+| View all organizations | ❌ | ❌ | ❌ |
+| Cross-org access | ❌ | ❌ | ❌ |
 
 **Assumptions:**
-- Roles are organization-scoped (except superadmin)
+- Roles are organization-scoped
 - Users cannot change their own role
 - Only admins can change other users' roles
-- Superadmin role cannot be assigned via API
 
 ---
 
@@ -442,7 +419,6 @@ Upload → Pending → Processing → Completed/Failed
 ### Backend Tests
 - All tests use in-memory MongoDB for isolation
 - Tests create organizations for multi-tenant scenarios
-- Superadmin tests verify tenant bypass
 - RBAC tests verify role-based permissions
 
 ### Frontend Tests

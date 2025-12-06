@@ -43,11 +43,7 @@ export const requireOwnershipOrAdmin = async (req, res, next) => {
     }
 
     // CRITICAL: Filter by organizationId to prevent cross-tenant access
-    // UNLESS user is superadmin
-    const query = { _id: videoId };
-    if (req.user.role !== 'superadmin') {
-      query.organizationId = req.user.organizationId;
-    }
+    const query = { _id: videoId, organizationId: req.user.organizationId };
 
     const video = await Video.findOne(query);
 
@@ -56,12 +52,11 @@ export const requireOwnershipOrAdmin = async (req, res, next) => {
       return res.status(404).json({ message: "Video not found" });
     }
 
-    // Check if user is the owner or admin or superadmin
-    const isOwner = video.uploadedBy.toString() === req.user.id;
+    // Check if user is the owner or admin
+    const isOwner = video.uploadedBy.toString() === req.user.id.toString();
     const isAdmin = req.user.role === "admin";
-    const isSuperAdmin = req.user.role === "superadmin";
 
-    if (!isOwner && !isAdmin && !isSuperAdmin) {
+    if (!isOwner && !isAdmin) {
       console.log('[RBAC.requireOwnershipOrAdmin] User is not owner or admin');
       return res.status(403).json({
         message: "You don't have permission to access this video",
@@ -85,8 +80,8 @@ export const requireOwnershipOrAdmin = async (req, res, next) => {
 export const canModify = async (req, res, next) => {
   try {
     console.log('[RBAC.canModify] Entry:', { userId: req.user.id, role: req.user.role });
-    // Check role first
-    if (!["editor", "admin", "superadmin"].includes(req.user.role)) {
+    // Must be at least editor to modify anything
+    if (!["editor", "admin"].includes(req.user.role)) {
       console.log('[RBAC.canModify] Insufficient role:', req.user.role);
       return res.status(403).json({
         message: "Only editors and admins can modify videos",
@@ -116,11 +111,7 @@ export const requireOrganizationAccess = async (req, res, next) => {
     }
 
     // CRITICAL: Filter by organizationId to prevent cross-tenant access
-    // UNLESS user is superadmin
-    const query = { _id: videoId };
-    if (req.user.role !== 'superadmin') {
-      query.organizationId = req.user.organizationId;
-    }
+    const query = { _id: videoId, organizationId: req.user.organizationId };
 
     const video = await Video.findOne(query);
 
