@@ -22,6 +22,7 @@ const mockCompletedVideo: Video = {
     height: 1080,
   },
   codec: 'h264',
+  thumbnailUrl: 'http://example.com/thumbnail.jpg',
   uploadedBy: {
     _id: 'user123',
     name: 'Test User',

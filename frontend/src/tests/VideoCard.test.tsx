@@ -18,6 +18,7 @@ const mockVideo: Video = {
     height: 1080,
   },
   codec: 'h264',
+  thumbnailUrl: 'http://example.com/thumbnail.jpg',
   uploadedBy: {
     _id: 'user123',
     name: 'Test User',
@@ -147,7 +148,7 @@ describe('VideoCard - Sensitivity Status', () => {
     }
     renderWithRouter(<VideoCard video={flaggedVideo} />)
     
-    expect(screen.getByText(/flagged reasons:/i)).toBeInTheDocument()
+    expect(screen.getByText(/flagged content/i)).toBeInTheDocument()
     expect(screen.getByText('Test reason 1')).toBeInTheDocument()
     expect(screen.getByText('Test reason 2')).toBeInTheDocument()
   })
