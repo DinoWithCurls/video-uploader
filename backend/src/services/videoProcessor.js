@@ -2,13 +2,45 @@ import ffmpeg from "fluent-ffmpeg";
 import { analyzeSensitivity } from "./sensitivityAnalyzer.js";
 import Video from "../models/Video.js";
 
+import cloudinary from "../config/cloudinary.js";
+
 /**
- * Extract video metadata using FFmpeg
+ * Extract video metadata using Cloudinary API or FFmpeg
  * @param {string} filepath - Path to video file
+ * @param {string} publicId - Cloudinary public ID (optional)
  * @returns {Promise<object>} Video metadata
  */
-export const extractVideoMetadata = (filepath) => {
-  console.log('[VideoProcessor.extractVideoMetadata] Entry:', { filepath });
+export const extractVideoMetadata = (filepath, publicId = null) => {
+  console.log('[VideoProcessor.extractVideoMetadata] Entry:', { filepath, publicId });
+
+  // If we have a Cloudinary public ID, fetch metadata from Cloudinary API
+  // This avoids running ffprobe on large remote files which causes OOM
+  if (publicId) {
+    return new Promise((resolve, reject) => {
+      cloudinary.api.resource(publicId, { resource_type: "video" })
+        .then((result) => {
+          console.log('[VideoProcessor.extractVideoMetadata] Cloudinary metadata fetched');
+          resolve({
+            duration: result.duration || 0,
+            resolution: {
+              width: result.width || 0,
+              height: result.height || 0,
+            },
+            codec: result.format || "unknown",
+            bitrate: result.bit_rate || 0,
+            format: result.format || "unknown",
+          });
+        })
+        .catch((err) => {
+          console.error("[VideoProcessor.extractVideoMetadata] Cloudinary API error:", err);
+          // Fallback to ffprobe if Cloudinary API fails? 
+          // For now, let's reject to avoid hidden OOMs if we fall back.
+          reject(err);
+        });
+    });
+  }
+
+  // Fallback to FFprobe for local files
   return new Promise((resolve, reject) => {
     ffmpeg.ffprobe(filepath, (err, metadata) => {
       if (err) {
@@ -108,7 +140,7 @@ export const processVideo = async (videoId, io = null) => {
     // Step 1: Extract metadata (25% progress)
     console.log('[VideoProcessor.processVideo] Step 1: Extracting metadata');
     await updateProgress(videoId, 10, io, userId);
-    const metadata = await extractVideoMetadata(video.filepath);
+    const metadata = await extractVideoMetadata(video.filepath, video.storedFilename);
 
     // Update video with metadata
     video.duration = metadata.duration;
