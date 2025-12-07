@@ -17,6 +17,7 @@ const httpServer = createServer(app);
 // Initialize Socket.io
 const io = new Server(httpServer, {
   cors: corsOptions,
+  pingTimeout: 60000, // Increase timeout to 60s to handle network latency/saturation
 });
 
 // Socket.io authentication middleware
