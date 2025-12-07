@@ -30,19 +30,26 @@ export const processUpload = async (videoId, filePath, io) => {
         throw new Error("Video not found");
     }
 
-    // Determine upload method based on file size (50MB threshold for chunking)
+    // Determine upload method based on file size
     const stats = fs.statSync(filePath);
     const fileSize = stats.size;
-    const isLargeFile = fileSize > 50 * 1024 * 1024; // 50MB
+    
+    // Thresholds
+    const COMPRESSION_THRESHOLD = 200 * 1024 * 1024; // 200MB
+    const SIMPLE_UPLOAD_LIMIT = 100 * 1024 * 1024;   // 100MB
+    const CHUNK_SIZE = 20 * 1000 * 1000;             // 20MB (Cloudinary uses decimal MB for chunks typically, but bytes here)
 
-    console.log(`[CloudUploadService] Uploading ${isLargeFile ? 'large (>50MB)' : 'standard (<50MB)'} file (${fileSize} bytes)`);
+    const shouldCompress = fileSize > COMPRESSION_THRESHOLD;
+
+    console.log(`[CloudUploadService] File size: ${(fileSize / (1024*1024)).toFixed(2)} MB`);
+    console.log(`[CloudUploadService] Strategy: ${shouldCompress ? 'Compress & Upload' : 'Direct Upload'}`);
 
     let result;
+    const startTime = Date.now();
 
-    // ... inside processUpload ...
-
-    if (isLargeFile) {
-        console.log('[CloudUploadService] File exceeds 50MB. Compressing to fit Cloudinary limits...');
+    if (shouldCompress) {
+        console.log('[CloudUploadService] File exceeds 200MB. Compressing to fit Cloudinary limits...');
+        console.time('compression');
         const compressedPath = filePath + ".compressed.mp4";
         
         try {
@@ -62,79 +69,57 @@ export const processUpload = async (videoId, filePath, io) => {
                     .on('end', () => resolve())
                     .on('error', (err) => reject(err));
             });
+            console.timeEnd('compression');
 
             // Check if compression worked
             const newStats = fs.statSync(compressedPath);
-            console.log(`[CloudUploadService] Compressed size: ${newStats.size} bytes`);
+            console.log(`[CloudUploadService] Compressed size: ${(newStats.size / (1024*1024)).toFixed(2)} MB`);
 
             if (newStats.size < fileSize) {
                 // Remove original and use compressed
                 fs.unlinkSync(filePath);
                 filePath = compressedPath;
-                
-                // If now < 100MB, use standard upload
-                if (newStats.size < 100 * 1024 * 1024) {
-                    console.log('[CloudUploadService] Compressed file is < 100MB. Using standard upload.');
-                    result = await cloudinary.uploader.upload(filePath, {
-                        resource_type: "video",
-                    });
-                } else {
-                    // Still > 100MB, try upload_large (might fail if strict limit)
-                    console.log('[CloudUploadService] Compressed file still > 100MB. Trying chunked upload...');
-                    result = await new Promise((resolve, reject) => {
-                        cloudinary.uploader.upload_large(filePath, {
-                            resource_type: "video",
-                            chunk_size: 6000000,
-                        }, (error, result) => {
-                            if (error) return reject(error);
-                            resolve(result);
-                        });
-                    });
-                }
             } else {
-                console.warn('[CloudUploadService] Compression did not reduce size. Trying original file...');
-                fs.unlinkSync(compressedPath); // Delete useless compressed file
-                // Fallback to original upload_large logic
-                 result = await new Promise((resolve, reject) => {
-                    cloudinary.uploader.upload_large(filePath, {
-                        resource_type: "video",
-                        chunk_size: 6000000,
-                    }, (error, result) => {
-                        if (error) return reject(error);
-                        resolve(result);
-                    });
-                });
+                console.warn('[CloudUploadService] Compression did not reduce size. Using original file.');
+                fs.unlinkSync(compressedPath);
             }
         } catch (compressionError) {
             console.error('[CloudUploadService] Compression failed:', compressionError);
-            
-            // Clean up potentially failed compressed file
-            try {
-                if (fs.existsSync(compressedPath)) {
-                    fs.unlinkSync(compressedPath);
-                }
-            } catch (cleanupErr) {
-                console.error('[CloudUploadService] Failed to clean up compressed file:', cleanupErr);
-            }
-
-            // Fallback to original upload_large logic
-             result = await new Promise((resolve, reject) => {
-                cloudinary.uploader.upload_large(filePath, {
-                    resource_type: "video",
-                    chunk_size: 6000000,
-                }, (error, result) => {
-                    if (error) return reject(error);
-                    resolve(result);
-                });
-            });
+            // Fallback to original
+            if (fs.existsSync(compressedPath)) fs.unlinkSync(compressedPath);
         }
     } else {
+        console.log('[CloudUploadService] Skipping compression (< 200MB).');
+    }
+
+    // Re-check size after potential compression
+    const finalStats = fs.statSync(filePath);
+    const finalSize = finalStats.size;
+
+    console.time('upload');
+    if (finalSize < SIMPLE_UPLOAD_LIMIT) {
         // Use standard upload for smaller files
-        console.log('[CloudUploadService] Starting standard upload...');
+        console.log('[CloudUploadService] Starting standard upload (< 100MB)...');
         result = await cloudinary.uploader.upload(filePath, {
             resource_type: "video",
         });
+    } else {
+        // Use chunked upload for larger files
+        console.log(`[CloudUploadService] Starting chunked upload (> 100MB). Chunk size: ${CHUNK_SIZE/1000000}MB...`);
+        result = await new Promise((resolve, reject) => {
+            cloudinary.uploader.upload_large(filePath, {
+                resource_type: "video",
+                chunk_size: CHUNK_SIZE,
+            }, (error, result) => {
+                if (error) return reject(error);
+                resolve(result);
+            });
+        });
     }
+    console.timeEnd('upload');
+    
+    const totalTime = (Date.now() - startTime) / 1000;
+    console.log(`[CloudUploadService] Total processing time: ${totalTime.toFixed(2)}s`);
 
     console.log('[CloudUploadService] Cloudinary upload success:', { 
         public_id: result.public_id, 
