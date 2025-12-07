@@ -24,7 +24,7 @@ interface VideoContextType {
     file: File,
     metadata: { title: string; description?: string },
     onProgress?: (progress: number) => void
-  ) => Promise<void>;
+  ) => Promise<string>;
   deleteVideo: (id: string) => Promise<void>;
   updateVideo: (
     id: string,
@@ -97,6 +97,7 @@ export const VideoProvider: React.FC<{ children: React.ReactNode }> = ({
         } as Video;
 
         setVideos((prev) => [newVideo, ...prev]);
+        return newVideo._id;
       } catch (err: any) {
         setError(err.response?.data?.message || "Error uploading video");
         throw err;

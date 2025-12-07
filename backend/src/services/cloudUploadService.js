@@ -51,9 +51,12 @@ export const processUpload = async (videoId, filePath, io) => {
                     .outputOptions([
                         '-vcodec libx264',
                         '-crf 28',
-                        '-preset fast',
+                        '-preset ultrafast', // Minimize lookahead memory
+                        '-threads 1',        // Reduce thread buffer overhead
+                        '-vf scale=-2:720',  // Cap resolution at 720p
                         '-acodec aac',
-                        '-b:a 128k'
+                        '-b:a 128k',
+                        '-bufsize 2M'        // Strict bitrate buffer
                     ])
                     .save(compressedPath)
                     .on('end', () => resolve())
