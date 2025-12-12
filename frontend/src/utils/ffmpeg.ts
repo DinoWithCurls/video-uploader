@@ -10,11 +10,12 @@ const ffmpeg = new FFmpeg();
 export const loadFFmpeg = async () => {
   if (ffmpeg.loaded) return;
 
-  const baseURL = "https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm";
+  const baseURL = "https://unpkg.com/@ffmpeg/core-mt@0.12.6/dist/esm";
   
   await ffmpeg.load({
     coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, "text/javascript"),
     wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, "application/wasm"),
+    workerURL: await toBlobURL(`${baseURL}/ffmpeg-core.worker.js`, "text/javascript"),
   });
 };
 
@@ -53,7 +54,7 @@ export const compressVideo = async (
   // -vf scale=-2:720 : Scale to 720p height, keep aspect ratio
   // -crf 28 : Good balance of quality and size (lower is better quality)
   // -preset ultrafast : Fastest compression speed (trade-off: slightly larger file size)
-  // -threads 0: Auto-detect threads (requires shared memory headers)
+  // -threads 4: Use 4 threads for parallel processing (requires core-mt)
   await ffmpeg.exec([
     "-i", inputFileName,
     "-vf", "scale=-2:720", 
@@ -62,6 +63,7 @@ export const compressVideo = async (
     "-preset", "ultrafast",
     "-c:a", "aac",
     "-b:a", "128k",
+    "-threads", "4",
     outputFileName
   ]);
 
