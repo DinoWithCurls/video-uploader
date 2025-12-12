@@ -1,4 +1,5 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
+import { compressVideo } from "../../utils/ffmpeg";
 import { useVideos } from "../../hooks/useVideos";
 import Toast from "../common/Toast";
 import logger from "../../utils/logger";
@@ -9,6 +10,8 @@ const VideoUpload: React.FC = () => {
   const [description, setDescription] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [compressing, setCompressing] = useState(false);
+  const [compressionProgress, setCompressionProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -24,6 +27,19 @@ const VideoUpload: React.FC = () => {
     setToast({ type, message });
     setTimeout(() => setToast(null), 5000);
   };
+
+  // Protect against accidental refresh/close
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (uploading || compressing) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [uploading, compressing]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -106,10 +122,48 @@ const VideoUpload: React.FC = () => {
     setSuccess(false);
     setUploadProgress(0);
     setUploadedVideoId(null);
+    
+    // Reset compression state
+    setCompressing(false);
+    setCompressionProgress(0);
 
     try {
+      let fileToUpload = selectedFile;
+
+      // Check for compression need (> 100MB)
+      // Cloudinary Free Tier limit is 100MB
+      /* 
+         NOTE: We compress if > 100MB to ensure we can upload.
+         This runs CLIENT-SIDE to save server resources and avoid OOM.
+      */
+      if (selectedFile.size > 100 * 1024 * 1024) {
+          logger.log('[VideoUpload] File > 100MB, starting client-side compression...');
+          setCompressing(true);
+          setUploading(false); // Technically not uploading yet
+
+          try {
+            const compressedBlob = await compressVideo(selectedFile, (progress) => {
+                setCompressionProgress(progress);
+            });
+            
+            // Create a new File object from the blob to satisfy the upload interface
+            fileToUpload = new File([compressedBlob], selectedFile.name, {
+                type: 'video/mp4',
+                lastModified: Date.now()
+            });
+
+            logger.log('[VideoUpload] Compression complete. Original:', selectedFile.size, 'Compressed:', fileToUpload.size);
+            
+            setCompressing(false);
+            setUploading(true); // Now we start uploading
+          } catch (compError: any) {
+              logger.error('[VideoUpload] Compression failed:', compError);
+              throw new Error("Failed to compress video. Please try a smaller file or checked your connection.");
+          }
+      }
+
       const newVideoId = await uploadVideo(
-        selectedFile,
+        fileToUpload,
         { title, description },
         (progress) => {
           setUploadProgress(progress);
@@ -127,6 +181,7 @@ const VideoUpload: React.FC = () => {
       setDescription("");
       setSelectedFile(null);
       setUploadProgress(0);
+      setCompressionProgress(0);
 
     } catch (err: any) {
       logger.error('[VideoUpload.handleSubmit] Upload error:', err);
@@ -135,6 +190,7 @@ const VideoUpload: React.FC = () => {
       showToast("error", errorMsg);
     } finally {
       setUploading(false);
+      setCompressing(false);
     }
   };
 
@@ -246,6 +302,25 @@ const VideoUpload: React.FC = () => {
               />
             </div>
 
+            {/* Compression Progress */}
+            {compressing && (
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-blue-700 font-medium">Optimizing video for upload... (This may take a minute)</span>
+                  <span className="font-bold">{compressionProgress}%</span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div
+                    className="bg-purple-600 h-2 rounded-full transition-all duration-300 relative overflow-hidden"
+                    style={{ width: `${compressionProgress}%` }}
+                  >
+                     <div className="absolute inset-0 bg-white/30 animate-[shimmer_2s_infinite]" style={{ backgroundImage: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent)' }}></div>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-500 text-center">Do not close this tab. Processing happens offline on your device.</p>
+              </div>
+            )}
+
             {/* Upload Progress */}
             {uploading && (
               <div className="space-y-2">
@@ -272,10 +347,10 @@ const VideoUpload: React.FC = () => {
             {/* Submit Button */}
             <button
               type="submit"
-              disabled={uploading || !selectedFile || !title.trim()}
+              disabled={uploading || compressing || !selectedFile || !title.trim()}
               className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
             >
-              {uploading ? "Uploading..." : "Upload Video"}
+              {compressing ? `Optimizing (${compressionProgress}%)` : uploading ? `Uploading (${uploadProgress}%)` : "Upload Video"}
             </button>
           </form>
       ) : (

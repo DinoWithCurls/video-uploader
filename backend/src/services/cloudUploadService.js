@@ -34,77 +34,23 @@ export const processUpload = async (videoId, filePath, io) => {
     const stats = fs.statSync(filePath);
     const fileSize = stats.size;
     
-    // Thresholds
-    const COMPRESSION_THRESHOLD = 200 * 1024 * 1024; // 200MB
     const SIMPLE_UPLOAD_LIMIT = 100 * 1024 * 1024;   // 100MB
-    const CHUNK_SIZE = 20 * 1000 * 1000;             // 20MB (Cloudinary uses decimal MB for chunks typically, but bytes here)
-
-    const shouldCompress = fileSize > COMPRESSION_THRESHOLD;
+    const CHUNK_SIZE = 20 * 1000 * 1000;             // 20MB
 
     console.log(`[CloudUploadService] File size: ${(fileSize / (1024*1024)).toFixed(2)} MB`);
-    console.log(`[CloudUploadService] Strategy: ${shouldCompress ? 'Compress & Upload' : 'Direct Upload'}`);
 
     let result;
     const startTime = Date.now();
 
-    if (shouldCompress) {
-        console.log('[CloudUploadService] File exceeds 200MB. Compressing to fit Cloudinary limits...');
-        console.time('compression');
-        const compressedPath = filePath + ".compressed.mp4";
-        
-        try {
-            await new Promise((resolve, reject) => {
-                ffmpeg(filePath)
-                    .outputOptions([
-                        '-vcodec libx264',
-                        '-crf 28',
-                        '-preset ultrafast', // Minimize lookahead memory
-                        '-threads 1',        // Reduce thread buffer overhead
-                        '-vf scale=-2:720',  // Cap resolution at 720p
-                        '-acodec aac',
-                        '-b:a 128k',
-                        '-bufsize 2M'        // Strict bitrate buffer
-                    ])
-                    .save(compressedPath)
-                    .on('end', () => resolve())
-                    .on('error', (err) => reject(err));
-            });
-            console.timeEnd('compression');
-
-            // Check if compression worked
-            const newStats = fs.statSync(compressedPath);
-            console.log(`[CloudUploadService] Compressed size: ${(newStats.size / (1024*1024)).toFixed(2)} MB`);
-
-            if (newStats.size < fileSize) {
-                // Remove original and use compressed
-                fs.unlinkSync(filePath);
-                filePath = compressedPath;
-            } else {
-                console.warn('[CloudUploadService] Compression did not reduce size. Using original file.');
-                fs.unlinkSync(compressedPath);
-            }
-        } catch (compressionError) {
-            console.error('[CloudUploadService] Compression failed:', compressionError);
-            // Fallback to original
-            if (fs.existsSync(compressedPath)) fs.unlinkSync(compressedPath);
-        }
-    } else {
-        console.log('[CloudUploadService] Skipping compression (< 200MB).');
-    }
-
-    // Re-check size after potential compression
-    const finalStats = fs.statSync(filePath);
-    const finalSize = finalStats.size;
-
     console.time('upload');
-    if (finalSize < SIMPLE_UPLOAD_LIMIT) {
+    if (fileSize < SIMPLE_UPLOAD_LIMIT) {
         // Use standard upload for smaller files
         console.log('[CloudUploadService] Starting standard upload (< 100MB)...');
         result = await cloudinary.uploader.upload(filePath, {
             resource_type: "video",
         });
     } else {
-        // Use chunked upload for larger files
+        // Use chunked upload for larger files (just in case strict mode was bypassed or file is slightly over)
         console.log(`[CloudUploadService] Starting chunked upload (> 100MB). Chunk size: ${CHUNK_SIZE/1000000}MB...`);
         result = await new Promise((resolve, reject) => {
             cloudinary.uploader.upload_large(filePath, {
@@ -136,7 +82,7 @@ export const processUpload = async (videoId, filePath, io) => {
     // Update video with Cloudinary details
     video.storedFilename = result.public_id;
     video.filepath = url;
-    video.status = "processing"; // Move to processing state
+    video.status = "processing"; // Move to processing state (Cloudinary does its own processing)
     await video.save();
 
     // Clean up local file

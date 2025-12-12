@@ -13,6 +13,8 @@
     "test:ui": "vitest --ui"
   },
   "dependencies": {
+    "@ffmpeg/ffmpeg": "^0.12.15",
+    "@ffmpeg/util": "^0.12.2",
     "axios": "^1.13.2",
     "logrocket": "^10.1.1",
     "react": "^19.2.0",
