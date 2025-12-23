@@ -66,6 +66,10 @@ const videoSchema = new mongoose.Schema({
     required: true,
     index: true,
   },
+  categories: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Category",
+  }],
   status: {
     type: String,
     enum: ["pending", "uploading", "processing", "completed", "failed"],
@@ -109,6 +113,7 @@ videoSchema.index({ organizationId: 1, sensitivityStatus: 1 });
 videoSchema.index({ organizationId: 1, createdAt: -1 });
 videoSchema.index({ organizationId: 1, filesize: 1 });
 videoSchema.index({ organizationId: 1, duration: 1 });
+videoSchema.index({ categories: 1 });
 
 // Update the updatedAt timestamp before saving
 videoSchema.pre("save", function () {

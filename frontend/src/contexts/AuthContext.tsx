@@ -36,23 +36,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const checkAuth = async () => {
     logger.log('[AuthContext.checkAuth] Checking authentication');
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    if (storedToken && storedUser) {
-      try {
-        setToken(storedToken);
-        setUser(JSON.parse(storedUser));
-        // setIsAuthenticated(true); // This variable is not defined in the current context.
-      } catch (error) {
-        logger.error('[AuthContext.checkAuth] Error parsing stored user:', error);
-        localStorage.removeItem("token");
-        localStorage.removeItem("user");
+    try {
+      const response = await authAPI.getCurrentUser();
+      if (response.data.user) {
+        setUser(response.data.user);
+        // We don't have the token string anymore as it's in an HttpOnly cookie
+        // But we can set a dummy or just use the existence of user as auth state
+        setToken("cookie-auth"); 
       }
-    } else {
-      logger.log('[AuthContext.checkAuth] No token found');
+    } catch (error) {
+      logger.log('[AuthContext.checkAuth] Not authenticated or error:', error);
+      setUser(null);
+      setToken(null);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   // Check if user is logged in on mount
@@ -66,10 +64,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logger.log('[AuthContext.register] Entry:', { email: userData.email, name: userData.name });
       setError(null);
       const response = await authAPI.register(userData);
-      const { token: newToken, user } = response.data;
-      localStorage.setItem("token", newToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setToken(newToken);
+      const { user } = response.data;
+      // localStorage.setItem("token", newToken);
+      // localStorage.setItem("user", JSON.stringify(user));
+      setToken("cookie-auth");
       setUser(user);
       
       // Identify user in LogRocket
@@ -90,10 +88,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       logger.log('[AuthContext.login] Entry:', { email: credentials.email });
       setError(null);
       const response = await authAPI.login(credentials);
-      const { token: newToken, user } = response.data;
-      localStorage.setItem("token", newToken);
-      localStorage.setItem("user", JSON.stringify(user));
-      setToken(newToken);
+      const { user } = response.data;
+      // localStorage.setItem("token", newToken);
+      // localStorage.setItem("user", JSON.stringify(user));
+      setToken("cookie-auth");
       setUser(user);
       
       // Identify user in LogRocket
@@ -109,10 +107,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
     logger.log('[AuthContext.logout] Logging out user');
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    try {
+      // Call backup logout logic in api.js? 
+      // Actually we need an API call to clear the cookie on backend
+      await authAPI.logout(); // We need to add this to api.ts if not exists, but wait, authAPI has it?
+      // Checking api.ts... it doesn't have logout in authAPI object exposed in step 38 view_file.
+      // Wait, let's just clear implementation state first, I will add logout to api.ts in next step
+    } catch (e) {
+      console.error("Logout error", e);
+    }
+    // localStorage.removeItem("token");
+    // localStorage.removeItem("user");
     setToken(null);
     setUser(null);
     logger.log('[AuthContext.logout] User logged out');

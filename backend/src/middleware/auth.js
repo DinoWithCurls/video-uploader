@@ -4,9 +4,8 @@ import User from "../models/User.js";
 export const auth = async (req, res, next) => {
   try {
     console.log('[AuthMiddleware.auth] Entry:', { path: req.path, method: req.method });
-    // Extract token from Authorization header or query parameter
-    // Query parameter is needed for video streaming since <video> elements can't set headers
-    let token = req.headers.authorization?.split(" ")[1];
+    // Extract token from Cookie, Authorization header or query parameter
+    let token = req.cookies.token || req.headers.authorization?.split(" ")[1];
     
     if (!token && req.query.token) {
       console.log('[AuthMiddleware.auth] Token from query parameter');

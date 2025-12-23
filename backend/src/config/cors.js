@@ -1,5 +1,6 @@
 const allowedOrigins = [
   process.env.FRONTEND_URL,
+  process.env.CORS_ORIGIN,
   "http://localhost:5173",
   "http://localhost:3000",
 ];

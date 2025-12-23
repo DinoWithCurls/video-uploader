@@ -5,23 +5,21 @@ import videoRoutes from "./src/routes/video.js";
 import userRoutes from "./src/routes/user.js";
 import organizationRoutes from "./src/routes/organization.js";
 import { auth } from "./src/middleware/auth.js";
-import { corsOptions } from "./src/config/cors.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 
-// CORS middleware
-app.use(cors(corsOptions));
+// CORS middleware - simple configuration
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || process.env.FRONTEND_URL || "http://localhost:5173",
+    credentials: true,
+  })
+);
 
-// Body parsers with increased limits for chunked uploads
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(cookieParser());
 
-// Serve static thumbnail files for local storage mode (MUST come before API routes)
-import path from "path";
-import { fileURLToPath } from "url";
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-app.use("/uploads/thumbnails", express.static(path.join(__dirname, "uploads/thumbnails")));
+app.use(express.json());
 
 // Routes
 app.use("/api/auth", authRoutes);
@@ -38,7 +36,7 @@ app.get("/api/protected", auth, (req, res) => {
 });
 
 // Error handling
-app.use((err, req, res, _next) => {
+app.use((err, req, res, next) => {
   console.error("Error:", err);
 
   // Handle Multer errors

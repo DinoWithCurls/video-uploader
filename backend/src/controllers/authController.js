@@ -110,6 +110,14 @@ export const register = async (req, res) => {
     
     const token = generateToken(user._id, organization._id);
     console.log('[AuthController.register] Success: User registered');
+
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
     
     return res.status(201).json({
       message: "User created successfully!",
@@ -126,7 +134,7 @@ export const register = async (req, res) => {
           plan: organization.plan,
         },
       },
-      token,
+      // token, // Token is now in cookie
     });
   } catch (err) {
     console.error('[AuthController.register] Error:', err.message);
@@ -163,6 +171,14 @@ export const login = async (req, res) => {
     const token = generateToken(user._id, orgId);
     console.log('[AuthController.login] Success:', { userId: user._id, email: user.email, role: user.role, orgId });
 
+    // Set cookie
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'None' : 'Lax',
+      maxAge: 30 * 24 * 60 * 60 * 1000 // 30 days
+    });
+
     return res.status(200).json({
       message: "Login successful",
       user: {
@@ -178,7 +194,7 @@ export const login = async (req, res) => {
           plan: user.organizationId.plan,
         } : null,
       },
-      token,
+      // token, // Token is now in cookie
     });
   } catch (err) {
     console.error('[AuthController.login] Error:', err.message);
@@ -228,7 +244,12 @@ export const getCurrentUser = async (req, res) => {
  */
 export const logout = async (req, res) => {
   console.log('[AuthController.logout] User logging out');
-  res.clearCookie("token");
+  const isProduction = process.env.NODE_ENV === 'production';
+  res.clearCookie("token", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? 'None' : 'Lax'
+  });
   console.log('[AuthController.logout] Success: Cookie cleared');
   res.status(200).json({ message: "Logged out successfully" });
 };

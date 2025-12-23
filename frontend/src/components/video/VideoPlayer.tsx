@@ -119,6 +119,7 @@ const VideoPlayer: React.FC<VideoPlayerProps> = ({ video }) => {
           src={streamUrl}
           className="w-full"
           onClick={togglePlay}
+          crossOrigin="use-credentials"
         />
 
         {error && (

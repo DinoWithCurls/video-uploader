@@ -9,14 +9,13 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
 // Add auth token to requests
+// Add auth token to requests
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
+  // Token is now handled by cookies automatically
   return config;
 });
 
@@ -157,8 +156,7 @@ export const deleteVideo = async (id: string): Promise<void> => {
  * Get streaming URL for a video
  */
 export const getStreamUrl = (id: string): string => {
-  const token = localStorage.getItem("token");
-  const url = `${API_URL}/videos/${id}/stream?token=${token}`;
+  const url = `${API_URL}/videos/${id}/stream`;
   logger.log('[VideoService.getStreamUrl]', { id, url });
   return url;
 };

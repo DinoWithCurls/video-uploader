@@ -22,18 +22,34 @@ const io = new Server(httpServer, {
 
 // Socket.io authentication middleware
 io.use((socket, next) => {
-  const token = socket.handshake.auth.token;
+  // Try to get token from handshake auth (legacy/header) or from cookies
+  let token = socket.handshake.auth.token;
 
-  if (!token) {
-    return next(new Error("Authentication error"));
+  if (!token || token === 'cookie-auth') {
+    // Look for token in cookies
+    const cookieHeader = socket.request.headers.cookie;
+    if (cookieHeader) {
+      const cookies = cookieHeader.split(';').reduce((acc, cookie) => {
+        const [key, value] = cookie.trim().split('=');
+        acc[key] = value;
+        return acc;
+      }, {});
+      token = cookies.token;
+    }
+  }
+
+  if (!token || token === 'cookie-auth') {
+    return next(new Error("Authentication error: No token provided"));
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('[Socket.io Auth] Success:', { userId: decoded.id, email: decoded.email });
     socket.user = decoded;
     next();
   } catch (error) {
-    next(new Error("Authentication error"));
+    console.error('[Socket.io Auth] Token verification failed:', error.message);
+    next(new Error("Authentication error: Invalid token"));
   }
 });
 

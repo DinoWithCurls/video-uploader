@@ -69,7 +69,8 @@ export const loginSchema = Joi.object({
  */
 export const videoUploadSchema = Joi.object({
   title: Joi.string().min(1).max(200).trim().required(),
-  description: Joi.string().max(2000).trim().allow('').default('')
+  description: Joi.string().max(2000).trim().allow('').default(''),
+  categories: Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)).unique().single().optional()
 }).options({ stripUnknown: true });
 
 /**
@@ -77,7 +78,8 @@ export const videoUploadSchema = Joi.object({
  */
 export const videoUpdateSchema = Joi.object({
   title: Joi.string().min(1).max(200).trim().optional(),
-  description: Joi.string().max(2000).trim().allow('').optional()
+  description: Joi.string().max(2000).trim().allow('').optional(),
+  categories: Joi.array().items(Joi.string().pattern(/^[0-9a-fA-F]{24}$/)).unique().single().optional()
 }).options({ stripUnknown: true }).min(1);
 
 /**
@@ -108,3 +110,24 @@ export const organizationSchema = Joi.object({
     }),
   plan: Joi.string().valid('free', 'premium', 'enterprise').default('free')
 }).options({ stripUnknown: true });
+
+/**
+ * Category creation validation schema
+ */
+export const createCategorySchema = Joi.object({
+  name: Joi.string().min(1).max(50).trim().required(),
+  color: Joi.string().pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).default('#3B82F6'),
+  icon: Joi.string().min(1).max(50).default('Folder'),
+  description: Joi.string().max(500).trim().allow('').default('')
+}).options({ stripUnknown: true });
+
+/**
+ * Category update validation schema
+ */
+export const updateCategorySchema = Joi.object({
+  name: Joi.string().min(1).max(50).trim().optional(),
+  color: Joi.string().pattern(/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/).optional(),
+  icon: Joi.string().min(1).max(50).optional(),
+  description: Joi.string().max(500).trim().allow('').optional()
+}).options({ stripUnknown: true }).min(1);
+

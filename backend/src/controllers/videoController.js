@@ -1,4 +1,5 @@
 import Video from "../models/Video.js";
+import "../models/Category.js"; // Register Category model for populate
 import { processUpload } from "../services/cloudUploadService.js";
 import cloudinary from "../config/cloudinary.js";
 import * as localStorageService from "../services/localStorageService.js";
@@ -17,7 +18,7 @@ export const uploadVideo = async (req, res) => {
       return res.status(400).json({ message: "No video file uploaded" });
     }
 
-    const { title, description } = req.body;
+    const { title, description, categories } = req.body;
 
     if (!title) {
       console.log('[VideoController.uploadVideo] Title missing, cleaning up file');
@@ -46,6 +47,7 @@ export const uploadVideo = async (req, res) => {
       uploadedBy: req.user.id,
       organizationId: req.user.organizationId,
       status: "uploading", // New status indicating upload to cloud is in progress
+      categories: categories || [],
     });
 
     await video.save();
@@ -102,6 +104,7 @@ export const getVideos = async (req, res) => {
       order = "desc",
       page = 1,
       limit = 20,
+      category,
     } = req.query;
 
     // Build query - ALWAYS filter by organization
@@ -165,6 +168,17 @@ export const getVideos = async (req, res) => {
       }
     }
 
+    // Category filter
+    if (category) {
+      const isObjectId = /^[0-9a-fA-F]{24}$/.test(category);
+      if (isObjectId) {
+         query.categories = category;
+      }
+      // If it's not an ID, it might be a slug. But for performance and simplicity in this phase, 
+      // we assume the frontend sends the Category ID. 
+      // Implementing slug lookups would require importing Category model.
+    }
+
     // Build sort
     const sortOrder = order === "asc" ? 1 : -1;
     const sort = { [sortBy]: sortOrder };
@@ -178,6 +192,7 @@ export const getVideos = async (req, res) => {
       .skip(skip)
       .limit(parseInt(limit))
       .populate("uploadedBy", "name email")
+      .populate("categories", "name slug color icon")
       .select("-filepath"); // Don't expose file path
 
     const total = await Video.countDocuments(query);
@@ -208,7 +223,8 @@ export const getVideo = async (req, res) => {
     
     // Fetch video directly
     const video = await Video.findById(req.params.id)
-      .populate("uploadedBy", "name email");
+      .populate("uploadedBy", "name email")
+      .populate("categories", "name slug color icon");
 
     if (!video) {
       console.log('[VideoController.getVideo] Video not found:', req.params.id);
@@ -300,10 +316,11 @@ export const updateVideo = async (req, res) => {
   try {
     console.log('[VideoController.updateVideo] Entry:', { videoId: req.params.id, updates: req.body });
     const video = req.video;
-    const { title, description } = req.body;
+    const { title, description, categories } = req.body;
 
     if (title) video.title = title;
     if (description !== undefined) video.description = description;
+    if (categories !== undefined) video.categories = categories;
 
     await video.save();
     console.log('[VideoController.updateVideo] Success:', { videoId: video._id, title: video.title });

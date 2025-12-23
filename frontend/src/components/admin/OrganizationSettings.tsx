@@ -23,9 +23,20 @@ const OrganizationSettings = () => {
   if (error) {
     return (
       <div className="max-w-4xl mx-auto p-6">
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-          {error}
+      <div className="max-w-4xl mx-auto p-6">
+        <div className="bg-red-50 border-l-4 border-red-500 p-4">
+          <div className="flex">
+             <div className="flex-shrink-0">
+               <span className="text-red-500">❌</span>
+             </div>
+             <div className="ml-3">
+               <p className="text-sm text-red-700">
+                 {error}
+               </p>
+             </div>
+          </div>
         </div>
+      </div>
       </div>
     );
   }
